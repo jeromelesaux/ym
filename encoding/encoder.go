@@ -66,6 +66,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 		songName = append(songName, b)
 		if b == 0 {
 			copy(y.SongName, songName)
+			break
 		}
 	}
 	authorName := []byte{}
@@ -77,6 +78,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 		authorName = append(authorName, b)
 		if b == 0 {
 			copy(y.AuthorName, authorName)
+			break
 		}
 	}
 	songComment := []byte{}
@@ -88,6 +90,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 		songComment = append(songComment, b)
 		if b == 0 {
 			copy(y.SongComment, songComment)
+			break
 		}
 	}
 

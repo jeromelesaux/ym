@@ -31,6 +31,7 @@ func main() {
 		os.Exit(-1)
 	}
 	defer f.Close()
+
 	d, err := ioutil.ReadAll(f)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot read file (%s) error :%v\n", *file, err)
