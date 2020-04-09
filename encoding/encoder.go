@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
+	"os"
 
 	"github.com/jeromelesaux/ym"
 )
@@ -75,6 +77,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 		}
 		songName = append(songName, b)
 		if b == 0 {
+			y.SongName = make([]byte, len(songName))
 			copy(y.SongName, songName)
 			break
 		}
@@ -87,6 +90,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 		}
 		authorName = append(authorName, b)
 		if b == 0 {
+			y.AuthorName = make([]byte, len(authorName))
 			copy(y.AuthorName, authorName)
 			break
 		}
@@ -99,6 +103,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 		}
 		songComment = append(songComment, b)
 		if b == 0 {
+			y.SongComment = make([]byte, len(songComment))
 			copy(y.SongComment, songComment)
 			break
 		}
@@ -117,7 +122,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 		}
 	}
 	if err := binary.Read(r, binary.BigEndian, &y.EndID); err != nil {
-		return err
+		fmt.Fprintf(os.Stderr, "Warning no Endid found \n")
 	}
 
 	return nil

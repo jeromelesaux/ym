@@ -7,7 +7,7 @@ type Ym struct {
 	SongAttributes uint32
 	DigidrumNb     uint16
 	YmMasterClock  uint32
-	FrameHz        uint32
+	FrameHz        uint16
 	LoopFrame      uint32
 	Size           uint16
 	Digidrums      []Digidrum

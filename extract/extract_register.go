@@ -21,7 +21,7 @@ var (
 
 func main() {
 	flag.Parse()
-	if *out == "" || *file == "" {
+	if *file == "" {
 		flag.PrintDefaults()
 		os.Exit(-1)
 	}
@@ -37,12 +37,17 @@ func main() {
 		fmt.Fprintf(os.Stderr, "cannot read file (%s) error :%v\n", *file, err)
 		os.Exit(-1)
 	}
-	CheckOutput(*out)
+	if *out != "" {
+		CheckOutput(*out)
+	}
 	y := &ym.Ym{}
 	if err := encoding.Unmarshall(d, y); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse file (%s) error :%v\n", *file, err)
 		os.Exit(-1)
 	}
+	fmt.Fprintf(os.Stdout, "File:%s\n", *file)
+	fmt.Fprintf(os.Stdout, "Song:%s\nAuthor:%s\n", string(y.SongName[:]), string(y.AuthorName[:]))
+	fmt.Fprintf(os.Stdout, "Saving into folder : %s\n", *out)
 	for i := 0; i < 16; i++ {
 		filename := fmt.Sprintf("r%.2d.bin", i)
 		w, err := os.Create(filepath.Join(*out, filename))
