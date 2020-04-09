@@ -15,8 +15,9 @@ import (
 var ErrorIsNotDirectory = errors.New("Is not a directory, Quiting.")
 
 var (
-	out  = flag.String("out", "", "folder to save register")
-	file = flag.String("ym", "", "ym filepath")
+	out     = flag.String("out", "", "folder to save register")
+	file    = flag.String("ym", "", "ym filepath")
+	version = flag.String("version", "0.1", "display app version.")
 )
 
 func main() {

@@ -112,10 +112,11 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 	for i := 0; i <= 15; i++ {
 		y.Data[i] = make([]byte, y.NbFrames)
 	}
-	var err error
-	for i := 0; i < int(y.NbFrames); i++ {
-		for j := 0; j < 16; j++ {
-			y.Data[j][i], err = r.ReadByte()
+
+	for j := 0; j < 16; j++ {
+		for i := 0; i < int(y.NbFrames); i++ {
+			v, err := r.ReadByte()
+			y.Data[j][i] = writeRegister(v, j)
 			if err != nil {
 				return err
 			}
@@ -175,8 +176,9 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 		return b.Bytes(), err
 	}
 	var err error
-	for i := 0; i < int(y.NbFrames); i++ {
-		for j := 0; j < 16; j++ {
+
+	for j := 0; j < 16; j++ {
+		for i := 0; i < int(y.NbFrames); i++ {
 			err = b.WriteByte(y.Data[j][i])
 			if err != nil {
 				return b.Bytes(), err
@@ -187,4 +189,38 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 		return b.Bytes(), err
 	}
 	return b.Bytes(), err
+}
+
+func writeRegister(v byte, index int) byte {
+	switch index {
+	case 0:
+		return v & 255
+	case 1:
+		return v & 15
+	case 2:
+		return v & 255
+	case 3:
+		return v & 15
+	case 4:
+		return v & 255
+	case 5:
+		return v & 15
+	case 6:
+		return v & 0x1f
+	case 7:
+		return v & 255
+	case 8:
+		return v & 31
+	case 9:
+		return v & 31
+	case 10:
+		return v & 31
+	case 11:
+		return v & 255
+	case 12:
+		return v & 255
+	case 13:
+		return v & 0xF
+	}
+	return v
 }
