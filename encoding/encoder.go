@@ -8,13 +8,23 @@ import (
 	"github.com/jeromelesaux/ym"
 )
 
+var (
+	ErrorCheckstringDiffers = errors.New("Checkstring LeOnArD! differs")
+	ErrorEndidDiffers       = errors.New("EndID End! differs")
+	ErrorFileidDiffers      = errors.New("FileID YM6! differs")
+)
+
 func Unmarshall(data []byte, y *ym.Ym) error {
 	r := bytes.NewReader(data)
 	if err := binary.Read(r, binary.BigEndian, &y.FileID); err != nil {
 		return err
 	}
+
 	if err := binary.Read(r, binary.BigEndian, &y.CheckString); err != nil {
 		return err
+	}
+	if string(y.CheckString[:]) != "LeOnArD!" {
+		return ErrorCheckstringDiffers
 	}
 	if err := binary.Read(r, binary.BigEndian, &y.NbFrames); err != nil {
 		return err
@@ -109,6 +119,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.EndID); err != nil {
 		return err
 	}
+
 	return nil
 }
 

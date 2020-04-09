@@ -14,7 +14,7 @@ type Ym struct {
 	SongName       []byte
 	AuthorName     []byte
 	SongComment    []byte
-	Data           [15][]byte
+	Data           [16][]byte
 	EndID          uint32
 }
 
