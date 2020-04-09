@@ -33,6 +33,7 @@ func main() {
 	}
 	defer f.Close()
 
+	//	r := lzw.NewReader(f, lzw.MSB, 6)
 	d, err := ioutil.ReadAll(f)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "cannot read file (%s) error :%v\n", *file, err)

@@ -116,7 +116,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 	for j := 0; j < 16; j++ {
 		for i := 0; i < int(y.NbFrames); i++ {
 			v, err := r.ReadByte()
-			y.Data[j][i] = writeRegister(v, j)
+			y.Data[j][i] = v // writeRegister(v, j)
 			if err != nil {
 				return err
 			}
