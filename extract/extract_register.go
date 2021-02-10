@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/jeromelesaux/lzh"
 	"github.com/jeromelesaux/ym"
 	"github.com/jeromelesaux/ym/encoding"
 )
@@ -15,9 +16,10 @@ import (
 var ErrorIsNotDirectory = errors.New("Is not a directory, Quiting.")
 
 var (
-	out     = flag.String("out", "", "folder to save register")
-	file    = flag.String("ym", "", "ym filepath")
-	version = flag.String("version", "0.1", "display app version.")
+	out        = flag.String("out", "", "folder to save register")
+	file       = flag.String("ym", "", "ym filepath")
+	version    = flag.String("version", "0.1", "display app version.")
+	compressed = flag.Bool("compressed", true, "the file is compressed.")
 )
 
 func main() {
@@ -32,18 +34,28 @@ func main() {
 		os.Exit(-1)
 	}
 	defer f.Close()
+	var data []byte
+	if *compressed {
+		l := lzh.NewLzh()
+		if err := l.Decode(f, false); err != nil {
+			fmt.Fprintf(os.Stderr, "cannot read file (%s) error :%v\n", *file, err)
+			os.Exit(-1)
+		}
+		data = l.DecodedBuffer()
+	} else {
 
-	//	r := lzw.NewReader(f, lzw.MSB, 6)
-	d, err := ioutil.ReadAll(f)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot read file (%s) error :%v\n", *file, err)
-		os.Exit(-1)
+		data, err = ioutil.ReadAll(f)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "cannot read file (%s) error :%v\n", *file, err)
+			os.Exit(-1)
+		}
 	}
+
 	if *out != "" {
 		CheckOutput(*out)
 	}
 	y := &ym.Ym{}
-	if err := encoding.Unmarshall(d, y); err != nil {
+	if err := encoding.Unmarshall(data, y); err != nil {
 		fmt.Fprintf(os.Stderr, "cannot parse file (%s) error :%v\n", *file, err)
 		os.Exit(-1)
 	}
