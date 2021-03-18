@@ -88,7 +88,7 @@ func (u *ui) updateTableLabel() fyne.CanvasObject {
 }
 
 func (u *ui) updateTableLength() (int, int) {
-	return int(u.ym.NbFrames), 16
+	return int(u.ym.NbFrames) + 1, 16 + 1
 }
 
 func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
@@ -108,7 +108,7 @@ func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 		if id.Row == 0 {
 			label.SetText(fmt.Sprintf("register %d", id.Col-1))
 		} else {
-			label.SetText(fmt.Sprintf("%d", u.ym.Data[id.Col][id.Row]))
+			label.SetText(fmt.Sprintf("%d", u.ym.Data[id.Col-1][id.Row]))
 		}
 	}
 	label.Resize(fyne.Size{Height: 20, Width: 20})
@@ -174,7 +174,7 @@ func (u *ui) LoadUI(app fyne.App) {
 				),
 				fyne.NewContainerWithLayout(
 					layout.NewGridLayout(1),
-					u.graphic,
+					container.NewVScroll(u.graphic),
 				),
 				/*	fyne.NewContainerWithLayout(
 						layout.NewGridLayout(1),
