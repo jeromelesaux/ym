@@ -24,5 +24,9 @@ type Digidrum struct {
 }
 
 func NewYm() *Ym {
-	return &Ym{}
+	y := &Ym{}
+	for i := 0; i < 16; i++ {
+		y.Data[i] = make([]byte, 0)
+	}
+	return y
 }

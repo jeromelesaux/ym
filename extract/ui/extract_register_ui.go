@@ -24,16 +24,24 @@ import (
 var ()
 
 type ui struct {
-	filename            string
-	ym                  ym.Ym
-	fileSongAuthor      *widget.Label
-	fileSongName        *widget.Label
-	fileSongDescription *widget.Label
-	fileFrameHz         *widget.Label
-	table               *widget.Table
-	graphic             *canvas.Image
-	window              fyne.Window
-	lastDirectory       string
+	filename              string
+	ym                    *ym.Ym
+	fileSongAuthor        *widget.Label
+	fileSongName          *widget.Label
+	fileSongDescription   *widget.Label
+	fileFrameHz           *widget.Label
+	rowStartSelected      *widget.Label
+	rowEndSelected        *widget.Label
+	rowStartSelectedIndex int
+	rowEndSelectedIndex   int
+	table                 *widget.Table
+	graphicContent        *container.Scroll
+	graphic               *canvas.Image
+	registersSelected     [16]bool
+	window                fyne.Window
+	lastDirectory         string
+	ymToSave              *ym.Ym
+	ymBackuped            *ym.Ym
 }
 
 func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
@@ -72,10 +80,10 @@ func (u *ui) generateChart() {
 		fmt.Fprintf(os.Stderr, "error while decoding png image : %v \n", err)
 	}
 	fw, _ := os.Create("tmp.png")
-	defer fw.Close()
+
 	png.Encode(fw, img)
+	fw.Close()
 	u.graphic = canvas.NewImageFromFile("tmp.png")
-	u.graphic.Refresh()
 }
 
 func (u *ui) updateTableLabel() fyne.CanvasObject {
@@ -89,6 +97,67 @@ func (u *ui) updateTableLabel() fyne.CanvasObject {
 
 func (u *ui) updateTableLength() (int, int) {
 	return int(u.ym.NbFrames) + 1, 16 + 1
+}
+
+func (u *ui) selectedTableCell(id widget.TableCellID) {
+	row := id.Row
+	if row > u.rowEndSelectedIndex {
+		u.rowEndSelectedIndex = row
+	}
+	if row < u.rowStartSelectedIndex {
+		u.rowStartSelectedIndex = row
+	}
+	u.rowStartSelected.SetText(fmt.Sprintf("row selection starts :%d", u.rowStartSelectedIndex))
+	u.rowEndSelected.SetText(fmt.Sprintf("row selection ends :%d", u.rowEndSelectedIndex))
+}
+
+func (u *ui) check0Changer(v bool) {
+	u.registersSelected[0] = v
+}
+func (u *ui) check1Changer(v bool) {
+	u.registersSelected[1] = v
+}
+func (u *ui) check2Changer(v bool) {
+	u.registersSelected[2] = v
+}
+func (u *ui) check3Changer(v bool) {
+	u.registersSelected[3] = v
+}
+func (u *ui) check4Changer(v bool) {
+	u.registersSelected[4] = v
+}
+func (u *ui) check5Changer(v bool) {
+	u.registersSelected[5] = v
+}
+func (u *ui) check6Changer(v bool) {
+	u.registersSelected[6] = v
+}
+func (u *ui) check7Changer(v bool) {
+	u.registersSelected[7] = v
+}
+func (u *ui) check8Changer(v bool) {
+	u.registersSelected[8] = v
+}
+func (u *ui) check9Changer(v bool) {
+	u.registersSelected[9] = v
+}
+func (u *ui) check10Changer(v bool) {
+	u.registersSelected[10] = v
+}
+func (u *ui) check11Changer(v bool) {
+	u.registersSelected[11] = v
+}
+func (u *ui) check12Changer(v bool) {
+	u.registersSelected[12] = v
+}
+func (u *ui) check13Changer(v bool) {
+	u.registersSelected[13] = v
+}
+func (u *ui) check14Changer(v bool) {
+	u.registersSelected[14] = v
+}
+func (u *ui) check15Changer(v bool) {
+	u.registersSelected[15] = v
 }
 
 func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
@@ -108,12 +177,12 @@ func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 		if id.Row == 0 {
 			label.SetText(fmt.Sprintf("register %d", id.Col-1))
 		} else {
-			label.SetText(fmt.Sprintf("%d", u.ym.Data[id.Col-1][id.Row]))
+			label.SetText(fmt.Sprintf("%d", u.ym.Data[id.Col-1][id.Row-1]))
 		}
 	}
 	label.Resize(fyne.Size{Height: 20, Width: 20})
 	cell.(*widget.Label).Resize(fyne.Size{
-		Width:  200,
+		Width:  20,
 		Height: 20,
 	})
 }
@@ -124,6 +193,8 @@ func NewUI() *ui {
 }
 
 func (u *ui) LoadUI(app fyne.App) {
+
+	u.ym = ym.NewYm()
 
 	u.fileSongAuthor = &widget.Label{Alignment: fyne.TextAlignTrailing}
 	u.fileSongAuthor.TextStyle.Monospace = true
@@ -151,18 +222,74 @@ func (u *ui) LoadUI(app fyne.App) {
 	saveButton := widget.NewButton("Save file", u.SaveFileAction)
 	saveButton.Resize(fyne.Size{Height: 1, Width: 50})
 
+	displayChangementsButton := widget.NewButton("Display changements", u.DisplayChange)
+	displayChangementsButton.Resize(fyne.Size{Height: 1, Width: 50})
+
+	returnToOriginalButton := widget.NewButton("Cancel changements", u.CancelChange)
+	returnToOriginalButton.Resize(fyne.Size{Height: 1, Width: 50})
+
+	/* registers check boxes selection */
+	var registersSelectionCheckedButton = make([]*widget.Check, 16)
+	type registerCheckFunc func(bool)
+	var registersSelectFuncs = [16]registerCheckFunc{
+		u.check0Changer,
+		u.check1Changer,
+		u.check2Changer,
+		u.check3Changer,
+		u.check4Changer,
+		u.check5Changer,
+		u.check6Changer,
+		u.check7Changer,
+		u.check8Changer,
+		u.check9Changer,
+		u.check10Changer,
+		u.check11Changer,
+		u.check12Changer,
+		u.check13Changer,
+		u.check14Changer,
+		u.check15Changer}
+
+	registerCheckLayout := fyne.NewContainerWithLayout(
+		layout.NewGridLayoutWithRows(16),
+	)
+
+	for i := 0; i < 16; i++ {
+		registersSelectionCheckedButton[i] = widget.NewCheck(fmt.Sprintf("register %d", i),
+			registersSelectFuncs[i])
+		registerCheckLayout.Add(registersSelectionCheckedButton[i])
+	}
+
+	/* end of creation  */
+
+	u.rowEndSelected = widget.NewLabel("")
+	u.rowStartSelected = widget.NewLabel("")
+
+	rowSelectionLayout := fyne.NewContainerWithLayout(
+		layout.NewGridLayoutWithRows(2),
+		u.rowStartSelected,
+		u.rowEndSelected,
+	)
+
+	selectionLayout := fyne.NewContainerWithLayout(
+		layout.NewGridLayoutWithColumns(2),
+		registerCheckLayout,
+		rowSelectionLayout,
+	)
+
 	u.table = widget.NewTable(
 		u.updateTableLength,
 		u.updateTableLabel,
 		u.updateTableValue,
 	)
+	u.table.OnSelected = u.selectedTableCell
 
 	u.generateChart()
+	u.graphicContent = container.NewVScroll(u.graphic)
 
-	u.window = app.NewWindow("YeT")
+	u.window = app.NewWindow("YeTi")
 	u.window.SetContent(
 		fyne.NewContainerWithLayout(
-			layout.NewGridLayoutWithColumns(1),
+			layout.NewGridLayoutWithRows(2),
 			fyne.NewContainerWithLayout(
 				layout.NewGridLayoutWithRows(3),
 				fyne.NewContainerWithLayout(
@@ -174,25 +301,29 @@ func (u *ui) LoadUI(app fyne.App) {
 				),
 				fyne.NewContainerWithLayout(
 					layout.NewGridLayout(1),
-					container.NewVScroll(u.graphic),
+					u.graphicContent,
 				),
-				/*	fyne.NewContainerWithLayout(
-						layout.NewGridLayout(1),
-						u.fileSongName,
-					),
-					fyne.NewContainerWithLayout(
-						layout.NewGridLayout(1),
-						u.fileSongDescription,
-					),
-					fyne.NewContainerWithLayout(
-						layout.NewGridLayout(1),
-						u.fileFrameHz,
-					),*/
 				fyne.NewContainerWithLayout(
-					layout.NewGridLayout(2),
-					openButton,
-					saveButton,
+					layout.NewGridLayout(4),
+					fyne.NewContainerWithLayout(
+						layout.NewGridLayout(2),
+						openButton,
+						saveButton,
+					),
+					fyne.NewContainerWithLayout(
+						layout.NewGridLayout(1),
+						container.NewVScroll(selectionLayout),
+					),
+					fyne.NewContainerWithLayout(
+						layout.NewGridLayout(1),
+						displayChangementsButton,
+					),
+					fyne.NewContainerWithLayout(
+						layout.NewGridLayout(1),
+						returnToOriginalButton,
+					),
 				)),
+
 			fyne.NewContainerWithLayout(
 				layout.NewGridLayout(1),
 				container.NewVScroll(u.table),
@@ -204,6 +335,53 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	u.window.Show()
 
+}
+
+func (u *ui) prepareExport() {
+	u.ymToSave = ym.NewYm()
+	copy(u.ymToSave.AuthorName, u.ym.AuthorName)
+	copy(u.ymToSave.SongName, u.ym.SongName)
+	copy(u.ymToSave.SongComment, u.ym.SongComment)
+	u.ymToSave.DigidrumNb = u.ym.DigidrumNb
+	u.ymToSave.EndID = u.ym.EndID
+	u.ymToSave.FileID = u.ym.FileID
+	u.ymToSave.FrameHz = u.ym.FrameHz
+	u.ymToSave.LoopFrame = u.ym.LoopFrame
+	u.ymToSave.Size = u.ym.Size
+	u.ymToSave.SongAttributes = u.ym.SongAttributes
+	u.ymToSave.YmMasterClock = u.ym.YmMasterClock
+	length := u.rowEndSelectedIndex - u.rowStartSelectedIndex - 2
+	for i := 0; i < 16; i++ {
+		if u.registersSelected[i] {
+			var j int
+			if u.rowStartSelectedIndex != 0 {
+				j = u.rowStartSelectedIndex - 1
+			}
+			for ; j < u.rowEndSelectedIndex-1; j++ {
+				u.ymToSave.Data[i] = append(u.ymToSave.Data[i], u.ym.Data[i][j])
+			}
+		} else {
+			u.ymToSave.Data[i] = make([]byte, length)
+		}
+	}
+
+	u.ymToSave.NbFrames = uint32(length)
+}
+
+func (u *ui) DisplayChange() {
+	u.ymBackuped = u.ym
+	u.prepareExport()
+	u.ym = u.ymToSave
+	u.generateChart()
+	u.graphicContent.Refresh()
+	//	u.window.Resize(fyne.NewSize(700, 600))
+}
+
+func (u *ui) CancelChange() {
+	u.ym = u.ymBackuped
+	u.generateChart()
+	u.graphicContent.Refresh()
+	//	u.window.Resize(fyne.NewSize(700, 600))
 }
 
 func (u *ui) SaveFileAction() {
@@ -232,6 +410,7 @@ func (u *ui) OpenFileAction() {
 		u.filename = reader.URI().Path()
 		u.lastDirectory = reader.URI().Scheme() + "://" + filepath.Dir(reader.URI().Path())
 		u.loadYmFile(reader)
+
 	}, u.window)
 	uri, err := storage.ParseURI(u.lastDirectory)
 	if err == nil {
@@ -253,6 +432,7 @@ func (u *ui) setFileDescription() {
 
 func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 	defer f.Close()
+	u.ym = ym.NewYm()
 	var content []byte
 	archive := lha.NewLha(u.filename)
 	headers, err := archive.Headers()
@@ -268,7 +448,7 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 			dialog.ShowError(err, u.window)
 			return
 		}
-		err = encoding.Unmarshall(content, &u.ym)
+		err = encoding.Unmarshall(content, u.ym)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error while decoding ym file %s, error :%v\n", u.filename, err.Error())
 			dialog.ShowError(err, u.window)
