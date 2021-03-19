@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	"image/png"
 
@@ -30,18 +32,22 @@ type ui struct {
 	fileSongName          *widget.Label
 	fileSongDescription   *widget.Label
 	fileFrameHz           *widget.Label
-	rowStartSelected      *widget.Label
-	rowEndSelected        *widget.Label
+	rowStartSelected      *widget.Entry
+	rowEndSelected        *widget.Entry
 	rowStartSelectedIndex int
 	rowEndSelectedIndex   int
-	table                 *widget.Table
-	graphicContent        *container.Scroll
-	graphic               *canvas.Image
-	registersSelected     [16]bool
-	window                fyne.Window
-	lastDirectory         string
-	ymToSave              *ym.Ym
-	ymBackuped            *ym.Ym
+	rowSelectionLayout    *container.Scroll
+
+	table             *widget.Table
+	graphicContent    *container.Scroll
+	graphic           *canvas.Image
+	registersSelected [16]bool
+	window            fyne.Window
+	lastDirectory     string
+	ymToSave          *ym.Ym
+	ymBackuped        *ym.Ym
+	headerLevel       byte
+	compressMethod    int
 }
 
 func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
@@ -100,15 +106,25 @@ func (u *ui) updateTableLength() (int, int) {
 }
 
 func (u *ui) selectedTableCell(id widget.TableCellID) {
-	row := id.Row
-	if row > u.rowEndSelectedIndex {
-		u.rowEndSelectedIndex = row
-	}
-	if row < u.rowStartSelectedIndex {
-		u.rowStartSelectedIndex = row
-	}
-	u.rowStartSelected.SetText(fmt.Sprintf("row selection starts :%d", u.rowStartSelectedIndex))
-	u.rowEndSelected.SetText(fmt.Sprintf("row selection ends :%d", u.rowEndSelectedIndex))
+}
+
+func (u *ui) checkAllChanger(v bool) {
+	u.check0Changer(v)
+	u.check1Changer(v)
+	u.check2Changer(v)
+	u.check3Changer(v)
+	u.check4Changer(v)
+	u.check5Changer(v)
+	u.check6Changer(v)
+	u.check7Changer(v)
+	u.check8Changer(v)
+	u.check9Changer(v)
+	u.check10Changer(v)
+	u.check11Changer(v)
+	u.check12Changer(v)
+	u.check13Changer(v)
+	u.check14Changer(v)
+	u.check15Changer(v)
 }
 
 func (u *ui) check0Changer(v bool) {
@@ -158,6 +174,30 @@ func (u *ui) check14Changer(v bool) {
 }
 func (u *ui) check15Changer(v bool) {
 	u.registersSelected[15] = v
+}
+
+func (u *ui) endChange(v string) {
+	end, err := strconv.Atoi(v)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error input %v, for value [%s]\n", err, v)
+		return
+	}
+	u.rowEndSelectedIndex = end
+	if end < 0 || end > int(u.ym.NbFrames) {
+		u.rowEndSelectedIndex = int(u.ym.NbFrames)
+	}
+}
+
+func (u *ui) startChange(v string) {
+	start, err := strconv.Atoi(v)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error input %v, for value [%s]\n", err, v)
+		return
+	}
+	u.rowStartSelectedIndex = start
+	if start < 0 || start > int(u.ym.NbFrames) {
+		u.rowStartSelectedIndex = 0
+	}
 }
 
 func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
@@ -229,9 +269,10 @@ func (u *ui) LoadUI(app fyne.App) {
 	returnToOriginalButton.Resize(fyne.Size{Height: 1, Width: 50})
 
 	/* registers check boxes selection */
-	var registersSelectionCheckedButton = make([]*widget.Check, 16)
+	var registersSelectionCheckedButton = make([]*widget.Check, 17)
 	type registerCheckFunc func(bool)
-	var registersSelectFuncs = [16]registerCheckFunc{
+	var registersSelectFuncs = [17]registerCheckFunc{
+		u.checkAllChanger,
 		u.check0Changer,
 		u.check1Changer,
 		u.check2Changer,
@@ -250,10 +291,11 @@ func (u *ui) LoadUI(app fyne.App) {
 		u.check15Changer}
 
 	registerCheckLayout := fyne.NewContainerWithLayout(
-		layout.NewGridLayoutWithRows(16),
+		layout.NewGridLayoutWithRows(17),
 	)
-
-	for i := 0; i < 16; i++ {
+	registersSelectionCheckedButton[0] = widget.NewCheck("select all registers", registersSelectFuncs[0])
+	registerCheckLayout.Add(registersSelectionCheckedButton[0])
+	for i := 1; i < 17; i++ {
 		registersSelectionCheckedButton[i] = widget.NewCheck(fmt.Sprintf("register %d", i),
 			registersSelectFuncs[i])
 		registerCheckLayout.Add(registersSelectionCheckedButton[i])
@@ -261,19 +303,25 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	/* end of creation  */
 
-	u.rowEndSelected = widget.NewLabel("")
-	u.rowStartSelected = widget.NewLabel("")
+	u.rowEndSelected = widget.NewEntry()
+	u.rowEndSelected.OnSubmitted = u.endChange
+	startFrame := widget.NewLabel("Select the last frame")
+	u.rowStartSelected = widget.NewEntry()
+	endFrame := widget.NewLabel("Select the first frame")
+	u.rowStartSelected.OnSubmitted = u.startChange
 
-	rowSelectionLayout := fyne.NewContainerWithLayout(
-		layout.NewGridLayoutWithRows(2),
+	u.rowSelectionLayout = container.NewVScroll(fyne.NewContainerWithLayout(
+		layout.NewGridLayoutWithRows(4),
+		startFrame,
 		u.rowStartSelected,
+		endFrame,
 		u.rowEndSelected,
-	)
+	))
 
 	selectionLayout := fyne.NewContainerWithLayout(
 		layout.NewGridLayoutWithColumns(2),
-		registerCheckLayout,
-		rowSelectionLayout,
+		container.NewVScroll(registerCheckLayout),
+		u.rowSelectionLayout,
 	)
 
 	u.table = widget.NewTable(
@@ -312,7 +360,7 @@ func (u *ui) LoadUI(app fyne.App) {
 					),
 					fyne.NewContainerWithLayout(
 						layout.NewGridLayout(1),
-						container.NewVScroll(selectionLayout),
+						selectionLayout,
 					),
 					fyne.NewContainerWithLayout(
 						layout.NewGridLayout(1),
@@ -351,6 +399,9 @@ func (u *ui) prepareExport() {
 	u.ymToSave.SongAttributes = u.ym.SongAttributes
 	u.ymToSave.YmMasterClock = u.ym.YmMasterClock
 	length := u.rowEndSelectedIndex - u.rowStartSelectedIndex - 2
+	if length < 0 {
+		return
+	}
 	for i := 0; i < 16; i++ {
 		if u.registersSelected[i] {
 			var j int
@@ -369,6 +420,21 @@ func (u *ui) prepareExport() {
 }
 
 func (u *ui) DisplayChange() {
+	var err error
+	u.rowEndSelectedIndex, err = strconv.Atoi(u.rowEndSelected.Text)
+	if err != nil {
+		return
+	}
+	if u.rowEndSelectedIndex < 0 || u.rowEndSelectedIndex > int(u.ym.NbFrames) {
+		u.rowEndSelectedIndex = 0
+	}
+	u.rowStartSelectedIndex, err = strconv.Atoi(u.rowStartSelected.Text)
+	if err != nil {
+		return
+	}
+	if u.rowStartSelectedIndex < 0 || u.rowStartSelectedIndex > int(u.ym.NbFrames) {
+		u.rowStartSelectedIndex = int(u.ym.NbFrames)
+	}
 	u.ymBackuped = u.ym
 	u.prepareExport()
 	u.ym = u.ymToSave
@@ -381,6 +447,7 @@ func (u *ui) CancelChange() {
 	u.ym = u.ymBackuped
 	u.generateChart()
 	u.graphicContent.Refresh()
+
 	//	u.window.Resize(fyne.NewSize(700, 600))
 }
 
@@ -393,7 +460,12 @@ func (u *ui) SaveFileAction() {
 			dialog.ShowError(err, u.window)
 			return
 		}
-
+		filePath := strings.Replace(writer.URI().String(), writer.URI().Scheme()+"://", "", -1)
+		if err := u.saveNewYm(filePath); err != nil {
+			dialog.ShowError(err, u.window)
+			return
+		}
+		dialog.ShowInformation("file saving", "You file "+filePath+" is saved.", u.window)
 	}, u.window)
 	fd.Show()
 }
@@ -410,6 +482,7 @@ func (u *ui) OpenFileAction() {
 		u.filename = reader.URI().Path()
 		u.lastDirectory = reader.URI().Scheme() + "://" + filepath.Dir(reader.URI().Path())
 		u.loadYmFile(reader)
+		u.graphicContent.Refresh()
 
 	}, u.window)
 	uri, err := storage.ParseURI(u.lastDirectory)
@@ -442,6 +515,8 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 		return
 	}
 	if len(headers) > 0 {
+		u.headerLevel = headers[0].HeaderLevel
+		u.compressMethod = archive.CompressMethod
 		content, err = archive.DecompresBytes(headers[0])
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error while decompressing file %s, error :%v\n", u.filename, err.Error())
@@ -458,4 +533,14 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 	u.generateChart()
 	u.setFileDescription()
 
+}
+
+func (u *ui) saveNewYm(filePath string) error {
+	ym := u.ymToSave
+	content, err := encoding.Marshall(ym)
+	if err != nil {
+		return err
+	}
+	archive := lha.NewLha(filePath)
+	return archive.CompressBytes("archive.ym", content, u.compressMethod, int(u.headerLevel))
 }
