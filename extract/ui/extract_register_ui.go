@@ -23,20 +23,18 @@ import (
 	chart "github.com/wcharczuk/go-chart"
 )
 
-var ()
-
 type ui struct {
-	filename              string
-	ym                    *ym.Ym
-	fileSongAuthor        *widget.Label
-	fileSongName          *widget.Label
-	fileSongDescription   *widget.Label
-	fileFrameHz           *widget.Label
-	rowStartSelected      *widget.Entry
-	rowEndSelected        *widget.Entry
-	rowStartSelectedIndex int
-	rowEndSelectedIndex   int
-	rowSelectionLayout    *container.Scroll
+	filename                string
+	ym                      *ym.Ym
+	fileSongAuthor          *widget.Label
+	fileSongName            *widget.Label
+	fileSongDescription     *widget.Label
+	fileFrameHz             *widget.Label
+	rowStartSelected        *widget.Entry
+	rowEndSelected          *widget.Entry
+	frameStartSelectedIndex int
+	frameEndSelectedIndex   int
+	rowSelectionLayout      *container.Scroll
 
 	table             *widget.Table
 	graphicContent    *container.Scroll
@@ -182,9 +180,9 @@ func (u *ui) endChange(v string) {
 		fmt.Fprintf(os.Stderr, "error input %v, for value [%s]\n", err, v)
 		return
 	}
-	u.rowEndSelectedIndex = end
+	u.frameEndSelectedIndex = end
 	if end < 0 || end > int(u.ym.NbFrames) {
-		u.rowEndSelectedIndex = int(u.ym.NbFrames)
+		u.frameEndSelectedIndex = int(u.ym.NbFrames)
 	}
 }
 
@@ -194,9 +192,9 @@ func (u *ui) startChange(v string) {
 		fmt.Fprintf(os.Stderr, "error input %v, for value [%s]\n", err, v)
 		return
 	}
-	u.rowStartSelectedIndex = start
+	u.frameStartSelectedIndex = start
 	if start < 0 || start > int(u.ym.NbFrames) {
-		u.rowStartSelectedIndex = 0
+		u.frameStartSelectedIndex = 0
 	}
 }
 
@@ -264,6 +262,9 @@ func (u *ui) LoadUI(app fyne.App) {
 	saveButton := widget.NewButton("Save file", u.SaveFileAction)
 	saveButton.Resize(fyne.Size{Height: 1, Width: 50})
 
+	cleanButton := widget.NewButton("Clean or reset", u.ResetUI)
+	cleanButton.Resize(fyne.Size{Height: 1, Width: 50})
+
 	displayChangementsButton := widget.NewButton("Display changements", u.DisplayChange)
 	displayChangementsButton.Resize(fyne.Size{Height: 1, Width: 50})
 
@@ -307,9 +308,9 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	u.rowEndSelected = widget.NewEntry()
 	u.rowEndSelected.OnSubmitted = u.endChange
-	startFrame := widget.NewLabel("Select the last frame")
+	startFrame := widget.NewLabel("Select the first frame (starts at 0)")
 	u.rowStartSelected = widget.NewEntry()
-	endFrame := widget.NewLabel("Select the first frame")
+	endFrame := widget.NewLabel("Select the last frame")
 	u.rowStartSelected.OnSubmitted = u.startChange
 
 	u.rowSelectionLayout = container.NewVScroll(fyne.NewContainerWithLayout(
@@ -354,24 +355,32 @@ func (u *ui) LoadUI(app fyne.App) {
 					u.graphicContent,
 				),
 				fyne.NewContainerWithLayout(
-					layout.NewGridLayout(4),
+					layout.NewGridLayoutWithRows(2),
 					fyne.NewContainerWithLayout(
 						layout.NewGridLayout(2),
-						openButton,
-						saveButton,
-					),
+						fyne.NewContainerWithLayout(
+							layout.NewGridLayout(2),
+							openButton,
+							saveButton,
+						),
+						fyne.NewContainerWithLayout(
+							layout.NewGridLayout(1),
+							selectionLayout,
+						)),
 					fyne.NewContainerWithLayout(
-						layout.NewGridLayout(1),
-						selectionLayout,
-					),
-					fyne.NewContainerWithLayout(
-						layout.NewGridLayout(1),
-						displayChangementsButton,
-					),
-					fyne.NewContainerWithLayout(
-						layout.NewGridLayout(1),
-						returnToOriginalButton,
-					),
+						layout.NewGridLayout(3),
+						fyne.NewContainerWithLayout(
+							layout.NewGridLayout(1),
+							displayChangementsButton,
+						),
+						fyne.NewContainerWithLayout(
+							layout.NewGridLayout(1),
+							returnToOriginalButton,
+						),
+						fyne.NewContainerWithLayout(
+							layout.NewGridLayout(1),
+							cleanButton,
+						)),
 				)),
 
 			fyne.NewContainerWithLayout(
@@ -401,17 +410,17 @@ func (u *ui) prepareExport() {
 	u.ymToSave.Size = u.ym.Size
 	u.ymToSave.SongAttributes = u.ym.SongAttributes
 	u.ymToSave.YmMasterClock = u.ym.YmMasterClock
-	length := u.rowEndSelectedIndex - u.rowStartSelectedIndex
+	length := u.frameEndSelectedIndex - u.frameStartSelectedIndex
 	if length < 0 {
 		return
 	}
 	for i := 0; i < 16; i++ {
 		if u.registersSelected[i] {
 			var j int
-			if u.rowStartSelectedIndex != 0 {
-				j = u.rowStartSelectedIndex - 1
+			if u.frameStartSelectedIndex != 0 {
+				j = u.frameStartSelectedIndex - 1
 			}
-			for ; j < u.rowEndSelectedIndex; j++ {
+			for ; j < u.frameEndSelectedIndex; j++ {
 				u.ymToSave.Data[i] = append(u.ymToSave.Data[i], u.ym.Data[i][j])
 			}
 		} else {
@@ -424,19 +433,19 @@ func (u *ui) prepareExport() {
 
 func (u *ui) DisplayChange() {
 	var err error
-	u.rowEndSelectedIndex, err = strconv.Atoi(u.rowEndSelected.Text)
+	u.frameEndSelectedIndex, err = strconv.Atoi(u.rowEndSelected.Text)
 	if err != nil {
 		return
 	}
-	if u.rowEndSelectedIndex < 0 || u.rowEndSelectedIndex > int(u.ym.NbFrames) {
-		u.rowEndSelectedIndex = 0
+	if u.frameEndSelectedIndex < 0 || u.frameEndSelectedIndex > int(u.ym.NbFrames) {
+		u.frameEndSelectedIndex = 0
 	}
-	u.rowStartSelectedIndex, err = strconv.Atoi(u.rowStartSelected.Text)
+	u.frameStartSelectedIndex, err = strconv.Atoi(u.rowStartSelected.Text)
 	if err != nil {
 		return
 	}
-	if u.rowStartSelectedIndex < 0 || u.rowStartSelectedIndex > int(u.ym.NbFrames) {
-		u.rowStartSelectedIndex = int(u.ym.NbFrames)
+	if u.frameStartSelectedIndex < 0 || u.frameStartSelectedIndex > int(u.ym.NbFrames) {
+		u.frameStartSelectedIndex = int(u.ym.NbFrames)
 	}
 	u.ymBackuped = u.ym
 	u.prepareExport()
@@ -452,6 +461,13 @@ func (u *ui) CancelChange() {
 	u.graphicContent.Refresh()
 
 	//	u.window.Resize(fyne.NewSize(700, 600))
+}
+
+func (u *ui) ResetUI() {
+	u.ym = ym.NewYm()
+	u.ymToSave = ym.NewYm()
+	u.generateChart()
+	u.graphicContent.Refresh()
 }
 
 func (u *ui) SaveFileAction() {
