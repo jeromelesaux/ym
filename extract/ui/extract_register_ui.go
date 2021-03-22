@@ -212,6 +212,8 @@ func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 	case 0:
 		if id.Row != 0 {
 			label.SetText(fmt.Sprintf("frame %d", id.Row))
+		} else {
+			label.SetText("")
 		}
 	default:
 		if id.Row == 0 {
@@ -390,6 +392,7 @@ func (u *ui) prepareExport() {
 	copy(u.ymToSave.AuthorName, u.ym.AuthorName)
 	copy(u.ymToSave.SongName, u.ym.SongName)
 	copy(u.ymToSave.SongComment, u.ym.SongComment)
+	copy(u.ymToSave.CheckString[:], u.ym.CheckString[:])
 	u.ymToSave.DigidrumNb = u.ym.DigidrumNb
 	u.ymToSave.EndID = u.ym.EndID
 	u.ymToSave.FileID = u.ym.FileID
@@ -398,7 +401,7 @@ func (u *ui) prepareExport() {
 	u.ymToSave.Size = u.ym.Size
 	u.ymToSave.SongAttributes = u.ym.SongAttributes
 	u.ymToSave.YmMasterClock = u.ym.YmMasterClock
-	length := u.rowEndSelectedIndex - u.rowStartSelectedIndex - 2
+	length := u.rowEndSelectedIndex - u.rowStartSelectedIndex
 	if length < 0 {
 		return
 	}
@@ -408,7 +411,7 @@ func (u *ui) prepareExport() {
 			if u.rowStartSelectedIndex != 0 {
 				j = u.rowStartSelectedIndex - 1
 			}
-			for ; j < u.rowEndSelectedIndex-1; j++ {
+			for ; j < u.rowEndSelectedIndex; j++ {
 				u.ymToSave.Data[i] = append(u.ymToSave.Data[i], u.ym.Data[i][j])
 			}
 		} else {
@@ -461,7 +464,7 @@ func (u *ui) SaveFileAction() {
 			return
 		}
 		filePath := strings.Replace(writer.URI().String(), writer.URI().Scheme()+"://", "", -1)
-		if err := u.saveNewYm(filePath); err != nil {
+		if err = u.saveNewYm(filePath, writer); err != nil {
 			dialog.ShowError(err, u.window)
 			return
 		}
@@ -504,7 +507,7 @@ func (u *ui) setFileDescription() {
 }
 
 func (u *ui) loadYmFile(f fyne.URIReadCloser) {
-	defer f.Close()
+	f.Close()
 	u.ym = ym.NewYm()
 	var content []byte
 	archive := lha.NewLha(u.filename)
@@ -535,7 +538,10 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 
 }
 
-func (u *ui) saveNewYm(filePath string) error {
+func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
+
+	writer.Close()
+	os.Remove(filePath)
 	ym := u.ymToSave
 	content, err := encoding.Marshall(ym)
 	if err != nil {

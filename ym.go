@@ -28,5 +28,6 @@ func NewYm() *Ym {
 	for i := 0; i < 16; i++ {
 		y.Data[i] = make([]byte, 0)
 	}
+	copy(y.CheckString[:], []byte("LeOnArD!"))
 	return y
 }

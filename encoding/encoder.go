@@ -63,7 +63,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 				return err
 			}
 			if n != int(d.SampleSize) {
-				return errors.New("size read differs from sample size.")
+				return errors.New("size read differs from sample size")
 			}
 			y.Digidrums[i] = d
 
@@ -160,7 +160,10 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 	}
 	if y.DigidrumNb > 0 {
 		for i := 0; i < int(y.DigidrumNb); i++ {
-			if err := binary.Write(&b, binary.BigEndian, &y.Digidrums[i]); err != nil {
+			if err := binary.Write(&b, binary.BigEndian, &y.Digidrums[i].SampleSize); err != nil {
+				return b.Bytes(), err
+			}
+			if err := binary.Write(&b, binary.BigEndian, &y.Digidrums[i].SampleData); err != nil {
 				return b.Bytes(), err
 			}
 		}
@@ -169,10 +172,20 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 	if err := binary.Write(&b, binary.BigEndian, &y.SongName); err != nil {
 		return b.Bytes(), err
 	}
+	var eos byte = 0 // end of string (c compliant)
+	if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+		return b.Bytes(), err
+	}
 	if err := binary.Write(&b, binary.BigEndian, &y.AuthorName); err != nil {
 		return b.Bytes(), err
 	}
+	if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+		return b.Bytes(), err
+	}
 	if err := binary.Write(&b, binary.BigEndian, &y.SongComment); err != nil {
+		return b.Bytes(), err
+	}
+	if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
 		return b.Bytes(), err
 	}
 	var err error
@@ -180,6 +193,7 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 	for j := 0; j < 16; j++ {
 		for i := 0; i < int(y.NbFrames); i++ {
 			err = b.WriteByte(y.Data[j][i])
+			fmt.Fprintf(os.Stderr, "j:%d,i:%d:%d\n", j, i, y.Data[j][i])
 			if err != nil {
 				return b.Bytes(), err
 			}
