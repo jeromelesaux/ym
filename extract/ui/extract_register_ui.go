@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 
 	"image/png"
 
@@ -46,6 +47,8 @@ type ui struct {
 	ymBackuped        *ym.Ym
 	headerLevel       byte
 	compressMethod    int
+	lock              sync.Mutex
+	graph             *chart.Chart
 }
 
 func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
@@ -55,15 +58,21 @@ func (u *ui) onTypedRune(r rune) {
 }
 
 func (u *ui) generateChart() {
+	u.lock.Lock()
 	series := []chart.Series{}
-	xseries := make([]float64, u.ym.NbFrames)
-	for i := 0; i < int(u.ym.NbFrames); i++ {
+	maxX := u.ym.NbFrames
+	if maxX > 1000 {
+		maxX = 1000
+	}
+	xseries := make([]float64, maxX)
+	for i := 0; i < int(maxX); i++ {
 		xseries[i] = float64(i)
 	}
 	for i := 0; i < len(u.ym.Data); i++ {
-		yseries := make([]float64, u.ym.NbFrames)
-		for j := 0; j < int(u.ym.NbFrames); j++ {
-			yseries[j] = float64(u.ym.Data[i][j])
+		yseries := make([]float64, maxX)
+		for j := 0; j < int(maxX); j++ {
+			index := int(u.ym.NbFrames/maxX) * j
+			yseries[j] = float64(u.ym.Data[i][index])
 		}
 		serie := chart.ContinuousSeries{
 			XValues: xseries,
@@ -71,11 +80,21 @@ func (u *ui) generateChart() {
 		}
 		series = append(series, serie)
 	}
-	graph := chart.Chart{
+	u.lock.Unlock()
+	u.graph = &chart.Chart{
+		YAxis: chart.YAxis{
+			Range: &chart.ContinuousRange{
+				Min: 0.0,
+				Max: 255.0,
+			},
+		},
+		Width:  1800,
+		Height: 800,
+
 		Series: series,
 	}
 	buffer := bytes.NewBuffer([]byte{})
-	err := graph.Render(chart.PNG, buffer)
+	err := u.graph.Render(chart.PNG, buffer)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error while creating chart : %v \n", err)
 	}
@@ -235,6 +254,8 @@ func NewUI() *ui {
 func (u *ui) LoadUI(app fyne.App) {
 
 	u.ym = ym.NewYm()
+	u.ymBackuped = ym.NewYm()
+	u.ymToSave = ym.NewYm()
 
 	u.fileSongAuthor = &widget.Label{Alignment: fyne.TextAlignTrailing}
 	u.fileSongAuthor.TextStyle.Monospace = true
@@ -314,7 +335,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.rowStartSelected.OnSubmitted = u.startChange
 
 	u.rowSelectionLayout = container.NewVScroll(fyne.NewContainerWithLayout(
-		layout.NewGridLayoutWithRows(4),
+		layout.NewGridLayoutWithColumns(4),
 		startFrame,
 		u.rowStartSelected,
 		endFrame,
@@ -356,8 +377,8 @@ func (u *ui) LoadUI(app fyne.App) {
 				),
 				fyne.NewContainerWithLayout(
 					layout.NewGridLayoutWithRows(2),
-					fyne.NewContainerWithLayout(
-						layout.NewGridLayout(2),
+					container.New(layout.NewVBoxLayout(),
+
 						fyne.NewContainerWithLayout(
 							layout.NewGridLayout(2),
 							openButton,
@@ -491,6 +512,7 @@ func (u *ui) SaveFileAction() {
 
 func (u *ui) OpenFileAction() {
 	fd := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
+
 		if err == nil && reader == nil {
 			return
 		}
@@ -500,8 +522,11 @@ func (u *ui) OpenFileAction() {
 		}
 		u.filename = reader.URI().Path()
 		u.lastDirectory = reader.URI().Scheme() + "://" + filepath.Dir(reader.URI().Path())
+		alert := dialog.NewInformation("loading file", "Please Wait", u.window)
+		alert.Show()
 		u.loadYmFile(reader)
 		u.graphicContent.Refresh()
+		alert.Hide()
 
 	}, u.window)
 	uri, err := storage.ParseURI(u.lastDirectory)
@@ -537,7 +562,7 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 		u.headerLevel = headers[0].HeaderLevel
 		u.compressMethod = archive.CompressMethod
 		content, err = archive.DecompresBytes(headers[0])
-		if err != nil {
+		if err != nil && len(content) < headers[0].OriginalSize {
 			fmt.Fprintf(os.Stderr, "Error while decompressing file %s, error :%v\n", u.filename, err.Error())
 			dialog.ShowError(err, u.window)
 			return
