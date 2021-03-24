@@ -40,6 +40,7 @@ type ui struct {
 
 	table             *widget.Table
 	graphicContent    *container.Scroll
+	tableContainer    *container.Scroll
 	graphic           *canvas.Image
 	registersSelected [16]bool
 	window            fyne.Window
@@ -53,12 +54,13 @@ type ui struct {
 	graph             *chart.Chart
 }
 
+/*
 func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
 }
 
 func (u *ui) onTypedRune(r rune) {
 }
-
+*/
 func (u *ui) generateChart() {
 	u.lock.Lock()
 	series := []chart.Series{}
@@ -125,6 +127,29 @@ func (u *ui) updateTableLength() (int, int) {
 }
 
 func (u *ui) selectedTableCell(id widget.TableCellID) {
+
+	frame := id.Row - 1
+	register := id.Col
+	if frame >= 0 {
+		fmt.Printf("register [%d] , frame [%d]\n", register, frame)
+		msg := fmt.Sprintf("Set the value of the register [%d] frame [%d]", register, frame)
+		de := dialog.NewEntryDialog("Set a new value", msg, func(v string) {
+			fmt.Printf("new value [%s] register [%d] , frame [%d]\n", v, register, frame)
+			frameValue, err := strconv.ParseInt("0x"+v, 0, 16)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "error while set the value :%v\n", err.Error())
+				return
+			}
+			if frameValue > 0xFF {
+				fmt.Fprintf(os.Stderr, "Value [%X] exceed 0xff ", frameValue)
+				return
+			}
+			fmt.Printf("new value [%d][%.2X] register [%d] , frame [%d]\n", frameValue, frameValue, register, frame)
+			u.ym.Data[register][frame] = byte(frameValue)
+		}, u.window)
+		de.Show()
+	}
+
 }
 
 func (u *ui) checkAllChanger(v bool) {
@@ -351,7 +376,7 @@ func (u *ui) LoadUI(app fyne.App) {
 		u.updateTableValue,
 	)
 	u.table.OnSelected = u.selectedTableCell
-
+	u.tableContainer = container.NewVScroll(u.table)
 	u.generateChart()
 	u.graphicContent = container.NewVScroll(u.graphic)
 
@@ -403,11 +428,11 @@ func (u *ui) LoadUI(app fyne.App) {
 
 			fyne.NewContainerWithLayout(
 				layout.NewGridLayout(1),
-				container.NewVScroll(u.table),
+				u.tableContainer,
 			),
 		))
-	u.window.Canvas().SetOnTypedRune(u.onTypedRune)
-	u.window.Canvas().SetOnTypedKey(u.onTypedKey)
+	//	u.window.Canvas().SetOnTypedRune(u.onTypedRune)
+	//	u.window.Canvas().SetOnTypedKey(u.onTypedKey)
 	u.window.Resize(fyne.NewSize(700, 600))
 
 	u.window.Show()

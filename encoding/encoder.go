@@ -199,7 +199,7 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 	for j := 0; j < 16; j++ {
 		for i := 0; i < int(y.NbFrames); i++ {
 			err = b.WriteByte(y.Data[j][i])
-			fmt.Fprintf(os.Stderr, "j:%d,i:%d:%d\n", j, i, y.Data[j][i])
+			//fmt.Fprintf(os.Stderr, "j:%d,i:%d:%d\n", j, i, y.Data[j][i])
 			if err != nil {
 				return b.Bytes(), err
 			}
