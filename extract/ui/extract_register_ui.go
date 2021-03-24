@@ -3,6 +3,7 @@ package ui
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -47,6 +48,7 @@ type ui struct {
 	ymBackuped        *ym.Ym
 	headerLevel       byte
 	compressMethod    int
+	archiveFilename   string
 	lock              sync.Mutex
 	graph             *chart.Chart
 }
@@ -61,8 +63,8 @@ func (u *ui) generateChart() {
 	u.lock.Lock()
 	series := []chart.Series{}
 	maxX := u.ym.NbFrames
-	if maxX > 1000 {
-		maxX = 1000
+	if maxX > 800 {
+		maxX = 800
 	}
 	xseries := make([]float64, maxX)
 	for i := 0; i < int(maxX); i++ {
@@ -119,7 +121,7 @@ func (u *ui) updateTableLabel() fyne.CanvasObject {
 }
 
 func (u *ui) updateTableLength() (int, int) {
-	return int(u.ym.NbFrames) + 1, 16 + 1
+	return int(u.ym.NbFrames) + 1, 16
 }
 
 func (u *ui) selectedTableCell(id widget.TableCellID) {
@@ -226,17 +228,11 @@ func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 		return
 	}
 	switch id.Col {
-	case 0:
-		if id.Row != 0 {
-			label.SetText(fmt.Sprintf("frame %d", id.Row))
-		} else {
-			label.SetText("")
-		}
 	default:
 		if id.Row == 0 {
-			label.SetText(fmt.Sprintf("register %d", id.Col-1))
+			label.SetText(fmt.Sprintf("register %d", id.Col))
 		} else {
-			label.SetText(fmt.Sprintf("%d", u.ym.Data[id.Col-1][id.Row-1]))
+			label.SetText(fmt.Sprintf("%d", u.ym.Data[id.Col][id.Row-1]))
 		}
 	}
 	label.Resize(fyne.Size{Height: 20, Width: 20})
@@ -256,6 +252,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.ym = ym.NewYm()
 	u.ymBackuped = ym.NewYm()
 	u.ymToSave = ym.NewYm()
+	u.archiveFilename = "archive.ym"
 
 	u.fileSongAuthor = &widget.Label{Alignment: fyne.TextAlignTrailing}
 	u.fileSongAuthor.TextStyle.Monospace = true
@@ -418,34 +415,21 @@ func (u *ui) LoadUI(app fyne.App) {
 }
 
 func (u *ui) prepareExport() {
-	u.ymToSave = ym.NewYm()
-	copy(u.ymToSave.AuthorName, u.ym.AuthorName)
-	copy(u.ymToSave.SongName, u.ym.SongName)
-	copy(u.ymToSave.SongComment, u.ym.SongComment)
-	copy(u.ymToSave.CheckString[:], u.ym.CheckString[:])
-	u.ymToSave.DigidrumNb = u.ym.DigidrumNb
-	u.ymToSave.EndID = u.ym.EndID
-	u.ymToSave.FileID = u.ym.FileID
-	u.ymToSave.FrameHz = u.ym.FrameHz
-	u.ymToSave.LoopFrame = u.ym.LoopFrame
-	u.ymToSave.Size = u.ym.Size
-	u.ymToSave.SongAttributes = u.ym.SongAttributes
-	u.ymToSave.YmMasterClock = u.ym.YmMasterClock
+	u.ymToSave = ym.CopyYm(u.ym)
 	length := u.frameEndSelectedIndex - u.frameStartSelectedIndex
 	if length < 0 {
 		return
 	}
 	for i := 0; i < 16; i++ {
+		u.ymToSave.Data[i] = make([]byte, length)
 		if u.registersSelected[i] {
 			var j int
 			if u.frameStartSelectedIndex != 0 {
 				j = u.frameStartSelectedIndex - 1
 			}
 			for ; j < u.frameEndSelectedIndex; j++ {
-				u.ymToSave.Data[i] = append(u.ymToSave.Data[i], u.ym.Data[i][j])
+				u.ymToSave.Data[i][j] = u.ym.Data[i][j]
 			}
-		} else {
-			u.ymToSave.Data[i] = make([]byte, length)
 		}
 	}
 
@@ -559,8 +543,13 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 		return
 	}
 	if len(headers) > 0 {
-		u.headerLevel = headers[0].HeaderLevel
-		u.compressMethod = archive.CompressMethod
+		fmt.Printf("informations: \n\tinternal name:[%s]\n\tCompress Method:[%d]\n\tHeader level:[%d]\n\t",
+			string(headers[0].Name),
+			archive.CompressMethod,
+			headers[0].HeaderLevel)
+		u.headerLevel = 0
+		u.compressMethod = 5
+		u.archiveFilename = string(headers[0].Name)
 		content, err = archive.DecompresBytes(headers[0])
 		if err != nil && len(content) < headers[0].OriginalSize {
 			fmt.Fprintf(os.Stderr, "Error while decompressing file %s, error :%v\n", u.filename, err.Error())
@@ -568,11 +557,13 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 			return
 		}
 		err = encoding.Unmarshall(content, u.ym)
-		if err != nil {
+		if err != nil && io.EOF != err {
 			fmt.Fprintf(os.Stderr, "Error while decoding ym file %s, error :%v\n", u.filename, err.Error())
 			dialog.ShowError(err, u.window)
 			return
 		}
+		fmt.Printf("NB frames:[%d]\n", u.ym.NbFrames)
+
 	}
 	u.generateChart()
 	u.setFileDescription()
@@ -589,5 +580,6 @@ func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
 		return err
 	}
 	archive := lha.NewLha(filePath)
-	return archive.CompressBytes("archive.ym", content, u.compressMethod, int(u.headerLevel))
+	lha.GenericFormat = true
+	return archive.CompressBytes(u.archiveFilename, content, u.compressMethod, int(u.headerLevel))
 }

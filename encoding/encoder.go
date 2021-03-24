@@ -109,7 +109,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 		}
 	}
 
-	for i := 0; i <= 15; i++ {
+	for i := 0; i < 16; i++ {
 		y.Data[i] = make([]byte, y.NbFrames)
 	}
 
@@ -173,20 +173,26 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 		return b.Bytes(), err
 	}
 	var eos byte = 0 // end of string (c compliant)
-	if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
-		return b.Bytes(), err
+	if y.SongName[len(y.SongName)-1] != 0 {
+		if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+			return b.Bytes(), err
+		}
 	}
 	if err := binary.Write(&b, binary.BigEndian, &y.AuthorName); err != nil {
 		return b.Bytes(), err
 	}
-	if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
-		return b.Bytes(), err
+	if y.AuthorName[len(y.AuthorName)-1] != 0 {
+		if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+			return b.Bytes(), err
+		}
 	}
 	if err := binary.Write(&b, binary.BigEndian, &y.SongComment); err != nil {
 		return b.Bytes(), err
 	}
-	if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
-		return b.Bytes(), err
+	if y.SongComment[len(y.SongComment)-1] != 0 {
+		if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+			return b.Bytes(), err
+		}
 	}
 	var err error
 
@@ -200,6 +206,10 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 		}
 	}
 	if err := binary.Write(&b, binary.BigEndian, &y.EndID); err != nil {
+		return b.Bytes(), err
+	}
+	ymEoF := []byte("End!")
+	if err := binary.Write(&b, binary.BigEndian, &ymEoF); err != nil {
 		return b.Bytes(), err
 	}
 	return b.Bytes(), err
