@@ -232,7 +232,7 @@ func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 		if id.Row == 0 {
 			label.SetText(fmt.Sprintf("register %d", id.Col))
 		} else {
-			label.SetText(fmt.Sprintf("%d", u.ym.Data[id.Col][id.Row-1]))
+			label.SetText(fmt.Sprintf("%.2X", u.ym.Data[id.Col][id.Row-1]))
 		}
 	}
 	label.Resize(fyne.Size{Height: 20, Width: 20})
@@ -416,19 +416,20 @@ func (u *ui) LoadUI(app fyne.App) {
 
 func (u *ui) prepareExport() {
 	u.ymToSave = ym.CopyYm(u.ym)
-	length := u.frameEndSelectedIndex - u.frameStartSelectedIndex
+	length := u.frameEndSelectedIndex - u.frameStartSelectedIndex + 1
 	if length < 0 {
 		return
 	}
 	for i := 0; i < 16; i++ {
 		u.ymToSave.Data[i] = make([]byte, length)
 		if u.registersSelected[i] {
-			var j int
+			var j, j2 int
 			if u.frameStartSelectedIndex != 0 {
-				j = u.frameStartSelectedIndex - 1
+				j = u.frameStartSelectedIndex
 			}
 			for ; j < u.frameEndSelectedIndex; j++ {
-				u.ymToSave.Data[i][j] = u.ym.Data[i][j]
+				u.ymToSave.Data[i][j2] = u.ym.Data[i][j]
+				j2++
 			}
 		}
 	}
@@ -440,14 +441,14 @@ func (u *ui) DisplayChange() {
 	var err error
 	u.frameEndSelectedIndex, err = strconv.Atoi(u.rowEndSelected.Text)
 	if err != nil {
-		return
+		u.frameEndSelectedIndex = int(u.ym.NbFrames)
 	}
 	if u.frameEndSelectedIndex < 0 || u.frameEndSelectedIndex > int(u.ym.NbFrames) {
 		u.frameEndSelectedIndex = 0
 	}
 	u.frameStartSelectedIndex, err = strconv.Atoi(u.rowStartSelected.Text)
 	if err != nil {
-		return
+		u.frameStartSelectedIndex = 0
 	}
 	if u.frameStartSelectedIndex < 0 || u.frameStartSelectedIndex > int(u.ym.NbFrames) {
 		u.frameStartSelectedIndex = int(u.ym.NbFrames)
@@ -471,6 +472,7 @@ func (u *ui) CancelChange() {
 func (u *ui) ResetUI() {
 	u.ym = ym.NewYm()
 	u.ymToSave = ym.NewYm()
+	u.ymBackuped = ym.NewYm()
 	u.generateChart()
 	u.graphicContent.Refresh()
 }
