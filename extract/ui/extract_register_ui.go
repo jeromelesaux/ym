@@ -123,14 +123,14 @@ func (u *ui) updateTableLabel() fyne.CanvasObject {
 }
 
 func (u *ui) updateTableLength() (int, int) {
-	return int(u.ym.NbFrames) + 1, 16
+	return int(u.ym.NbFrames) + 1, 16 + 1
 }
 
 func (u *ui) selectedTableCell(id widget.TableCellID) {
 
 	frame := id.Row - 1
-	register := id.Col
-	if frame >= 0 {
+	register := id.Col - 1
+	if frame >= 0 && register >= 0 {
 		fmt.Printf("register [%d] , frame [%d]\n", register, frame)
 		msg := fmt.Sprintf("Set the value of the register [%d] frame [%d]", register, frame)
 		de := dialog.NewEntryDialog("Set a new value", msg, func(v string) {
@@ -246,18 +246,24 @@ func (u *ui) startChange(v string) {
 
 func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 	label := cell.(*widget.Label)
-	if id.Col > 16 {
+	if id.Col >= 17 {
 		return
 	}
 	if id.Row >= int(u.ym.NbFrames)+1 {
 		return
 	}
 	switch id.Col {
+	case 0:
+		if id.Row != 0 {
+			label.SetText(fmt.Sprintf("%d", id.Row-1))
+		} else {
+			label.SetText("")
+		}
 	default:
 		if id.Row == 0 {
-			label.SetText(fmt.Sprintf("register %d", id.Col))
+			label.SetText(fmt.Sprintf("register %d", id.Col-1))
 		} else {
-			label.SetText(fmt.Sprintf("%.2X", u.ym.Data[id.Col][id.Row-1]))
+			label.SetText(fmt.Sprintf("%.2X", u.ym.Data[id.Col-1][id.Row-1]))
 		}
 	}
 	label.Resize(fyne.Size{Height: 20, Width: 20})
