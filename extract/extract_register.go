@@ -15,7 +15,7 @@ var ErrorIsNotDirectory = errors.New("Is not a directory, Quiting.")
 var ()
 
 func main() {
-	os.Setenv("FYNE_SCALE", "0.7")
+	os.Setenv("FYNE_SCALE", "0.6")
 	/* main application */
 	app := app.NewWithID("Ym extract tool By ImPact(YETI^)")
 	/* set icon application */

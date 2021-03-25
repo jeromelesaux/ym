@@ -25,6 +25,10 @@ import (
 	chart "github.com/wcharczuk/go-chart"
 )
 
+var (
+	Appversion = "with auto refresh."
+)
+
 type ui struct {
 	filename                string
 	ym                      *ym.Ym
@@ -146,6 +150,8 @@ func (u *ui) selectedTableCell(id widget.TableCellID) {
 			}
 			fmt.Printf("new value [%d][%.2X] register [%d] , frame [%d]\n", frameValue, frameValue, register, frame)
 			u.ym.Data[register][frame] = byte(frameValue)
+			u.table.Refresh()
+			//	u.window.Resize(fyne.NewSize(700, 600))
 		}, u.window)
 		de.Show()
 	}
@@ -257,7 +263,7 @@ func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 		if id.Row != 0 {
 			label.SetText(fmt.Sprintf("%d", id.Row-1))
 		} else {
-			label.SetText("")
+			label.SetText("Frame(s)")
 		}
 	default:
 		if id.Row == 0 {
@@ -440,7 +446,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	//	u.window.Canvas().SetOnTypedRune(u.onTypedRune)
 	//	u.window.Canvas().SetOnTypedKey(u.onTypedKey)
 	u.window.Resize(fyne.NewSize(700, 600))
-
+	u.window.SetTitle("YeTi @ " + Appversion)
 	u.window.Show()
 
 }
@@ -475,14 +481,14 @@ func (u *ui) DisplayChange() {
 		u.frameEndSelectedIndex = int(u.ym.NbFrames)
 	}
 	if u.frameEndSelectedIndex < 0 || u.frameEndSelectedIndex > int(u.ym.NbFrames) {
-		u.frameEndSelectedIndex = 0
+		u.frameEndSelectedIndex = int(u.ym.NbFrames)
 	}
 	u.frameStartSelectedIndex, err = strconv.Atoi(u.rowStartSelected.Text)
 	if err != nil {
 		u.frameStartSelectedIndex = 0
 	}
 	if u.frameStartSelectedIndex < 0 || u.frameStartSelectedIndex > int(u.ym.NbFrames) {
-		u.frameStartSelectedIndex = int(u.ym.NbFrames)
+		u.frameStartSelectedIndex = 0
 	}
 	u.ymBackuped = u.ym
 	u.prepareExport()
