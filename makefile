@@ -6,9 +6,10 @@ MV=mv
 SOURCEDIR=./extract
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
 
-VERSION:="1.0-hexa-emptyselection"
+VERSIONCOMMENT:=$(shell egrep -m1 "Appversion" extract/ui/*.go | cut -d= -f2 | tr -d "\"" | tr " " "_")
 suffix=$(shell grep -m1 "version" *.go | sed 's/[", ]//g' | cut -d= -f2 | sed 's/[0-9.]//g')
 snapshot=$(shell date +%FT%T)
+VERSION="1.0-"$(VERSIONCOMMENT)
 
 ifeq ($(suffix),rc)
 	appversion=$(VERSION)$(snapshot)
