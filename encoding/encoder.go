@@ -16,10 +16,27 @@ var (
 	ErrorFileidDiffers      = errors.New("FileID YM6! differs")
 )
 
+const (
+	AMSTRAD_CLOCK  = 1000000
+	ATARI_CLOCK    = 2000000
+	SPECTRUM_CLOCK = 1773400
+	MFP_CLOCK      = 2457600
+	NOISESIZE      = 16384
+	DRUM_PREC      = 15
+	YM3            = 0x594D3321
+	YM4            = 0x594D3421
+	YM5            = 0x594D3521
+)
+
+// 594D3321 == "YM3!"
+
 func Unmarshall(data []byte, y *ym.Ym) error {
 	r := bytes.NewReader(data)
 	if err := binary.Read(r, binary.BigEndian, &y.FileID); err != nil {
 		return err
+	}
+	if y.FileID <= YM4 {
+		return UmarshallOlderYm(r, data, y)
 	}
 
 	if err := binary.Read(r, binary.BigEndian, &y.CheckString); err != nil {
@@ -110,7 +127,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 	}
 
 	for i := 0; i < 16; i++ {
-		y.Data[i] = make([]byte, y.NbFrames)
+		y.Data[i] = make([]byte, y.NbFrames+1)
 	}
 
 	for j := 0; j < 16; j++ {
@@ -124,6 +141,9 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 	}
 	if err := binary.Read(r, binary.BigEndian, &y.EndID); err != nil {
 		fmt.Fprintf(os.Stderr, "Warning no Endid found \n")
+	}
+	if y.EndID != 2717270779 {
+		y.EndID = 2717270779
 	}
 
 	return nil
@@ -205,11 +225,12 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 			}
 		}
 	}
-	/*	if err := binary.Write(&b, binary.BigEndian, &y.EndID); err != nil {
-		return b.Bytes(), err
-	}*/
-	ymEoF := []byte("End!")
-	if err := binary.Write(&b, binary.BigEndian, &ymEoF); err != nil {
+
+	//ymEoF := []byte("End!")
+	if y.EndID != 2717270779 {
+		y.EndID = 2717270779
+	}
+	if err := binary.Write(&b, binary.BigEndian, &y.EndID); err != nil {
 		return b.Bytes(), err
 	}
 	return b.Bytes(), err
@@ -247,4 +268,23 @@ func writeRegister(v byte, index int) byte {
 		return v & 0xF
 	}
 	return v
+}
+
+func UmarshallOlderYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
+	y.NbFrames = uint32((len(data) - 4) / 14)
+	y.YmMasterClock = ATARI_CLOCK
+	y.FrameHz = 50
+	for j := 0; j < 16; j++ {
+		y.Data[j] = make([]byte, y.NbFrames)
+	}
+	for j := 0; j < 14; j++ {
+		for i := 0; i < int(y.NbFrames); i++ {
+			v, err := r.ReadByte()
+			y.Data[j][i] = v
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
