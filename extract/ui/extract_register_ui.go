@@ -475,13 +475,15 @@ func (u *ui) prepareExport() {
 }
 
 func (u *ui) DisplayChange() {
+	wait := dialog.NewInformation("Applying changements", "Please wait...", u.window)
+	wait.Show()
 	var err error
 	u.frameEndSelectedIndex, err = strconv.Atoi(u.rowEndSelected.Text)
 	if err != nil {
-		u.frameEndSelectedIndex = int(u.ym.NbFrames)
+		u.frameEndSelectedIndex = int(u.ym.NbFrames) - 1
 	}
 	if u.frameEndSelectedIndex < 0 || u.frameEndSelectedIndex > int(u.ym.NbFrames) {
-		u.frameEndSelectedIndex = int(u.ym.NbFrames)
+		u.frameEndSelectedIndex = int(u.ym.NbFrames) - 1
 	}
 	u.frameStartSelectedIndex, err = strconv.Atoi(u.rowStartSelected.Text)
 	if err != nil {
@@ -495,14 +497,17 @@ func (u *ui) DisplayChange() {
 	u.ym = u.ymToSave
 	u.generateChart()
 	u.graphicContent.Refresh()
+	wait.Hide()
 	//	u.window.Resize(fyne.NewSize(700, 600))
 }
 
 func (u *ui) CancelChange() {
+	wait := dialog.NewInformation("Get original file", "Please wait...", u.window)
+	wait.Show()
 	u.ym = u.ymBackuped
 	u.generateChart()
 	u.graphicContent.Refresh()
-
+	wait.Hide()
 	//	u.window.Resize(fyne.NewSize(700, 600))
 }
 
@@ -587,7 +592,7 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 			archive.CompressMethod,
 			headers[0].HeaderLevel)
 		u.headerLevel = 0
-		u.compressMethod = archive.CompressMethod
+		u.compressMethod = 5
 		u.archiveFilename = string(headers[0].Name)
 		content, err = archive.DecompresBytes(headers[0])
 		if err != nil && len(content) < headers[0].OriginalSize {
@@ -595,6 +600,9 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 			dialog.ShowError(err, u.window)
 			return
 		}
+		//	f, _ := os.Create("dump.bin")
+		//	defer f.Close()
+		//	f.Write(content)
 		err = encoding.Unmarshall(content, u.ym)
 		if err != nil && io.EOF != err {
 			fmt.Fprintf(os.Stderr, "Error while decoding ym file %s, error :%v\n", u.filename, err.Error())
@@ -610,7 +618,6 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 }
 
 func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
-
 	writer.Close()
 	os.Remove(filePath)
 	ym := u.ymToSave

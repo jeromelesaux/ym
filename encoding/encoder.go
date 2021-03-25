@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	ErrorCheckstringDiffers = errors.New("Checkstring LeOnArD! differs")
-	ErrorEndidDiffers       = errors.New("EndID End! differs")
-	ErrorFileidDiffers      = errors.New("FileID YM6! differs")
+	ErrorCheckstringDiffers = errors.New("checkstring LeOnArD! differs")
+	ErrorEndidDiffers       = errors.New("dndID End! differs")
+	ErrorFileidDiffers      = errors.New("fileID YM6! differs")
 )
 
 const (
@@ -27,8 +27,6 @@ const (
 	YM4            = 0x594D3421
 	YM5            = 0x594D3521
 )
-
-// 594D3321 == "YM3!"
 
 func Unmarshall(data []byte, y *ym.Ym) error {
 	r := bytes.NewReader(data)
