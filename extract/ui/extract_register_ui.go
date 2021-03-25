@@ -587,7 +587,7 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 			archive.CompressMethod,
 			headers[0].HeaderLevel)
 		u.headerLevel = 0
-		u.compressMethod = 5
+		u.compressMethod = archive.CompressMethod
 		u.archiveFilename = string(headers[0].Name)
 		content, err = archive.DecompresBytes(headers[0])
 		if err != nil && len(content) < headers[0].OriginalSize {
