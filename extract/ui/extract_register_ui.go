@@ -277,6 +277,20 @@ func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 	})
 }
 
+func (u *ui) goToFrame(v string) {
+	frame, err := strconv.Atoi(v)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error input %v, for value [%s]\n", err, v)
+		return
+	}
+	frame++
+	if frame > int(u.ym.NbFrames) {
+		frame = int(u.ym.NbFrames)
+	}
+	u.table.Select(widget.TableCellID{Row: frame, Col: 0})
+	u.table.Refresh()
+
+}
 func NewUI() *ui {
 	u := &ui{}
 	return u
@@ -308,6 +322,9 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	returnToOriginalButton := widget.NewButton("Cancel changements", u.CancelChange)
 	returnToOriginalButton.Resize(fyne.Size{Height: 1, Width: 50})
+	goToFrameLabel := widget.NewLabel("Go to frame")
+	gotToFrameEntry := widget.NewEntry()
+	gotToFrameEntry.OnSubmitted = u.goToFrame
 
 	/* registers check boxes selection */
 	var registersSelectionCheckedButton = make([]*widget.Check, 17)
@@ -331,7 +348,7 @@ func (u *ui) LoadUI(app fyne.App) {
 		u.check14Changer,
 		u.check15Changer}
 
-	registerCheckLayout := fyne.NewContainerWithLayout(
+	registerCheckLayout := container.New(
 		layout.NewGridLayoutWithRows(17),
 	)
 	registersSelectionCheckedButton[0] = widget.NewCheck("select all registers", registersSelectFuncs[0])
@@ -351,20 +368,35 @@ func (u *ui) LoadUI(app fyne.App) {
 	endFrame := widget.NewLabel("Select the last frame")
 	u.rowStartSelected.OnSubmitted = u.startChange
 
-	u.rowSelectionLayout = container.NewVScroll(fyne.NewContainerWithLayout(
-		layout.NewGridLayoutWithColumns(4),
-		startFrame,
-		u.rowStartSelected,
-		endFrame,
-		u.rowEndSelected,
-	))
-
-	selectionLayout := fyne.NewContainerWithLayout(
-		layout.NewGridLayoutWithColumns(2),
-		container.NewVScroll(registerCheckLayout),
-		u.rowSelectionLayout,
+	u.rowSelectionLayout = container.NewVScroll(
+		container.New(
+			layout.NewGridLayoutWithColumns(4),
+			startFrame,
+			u.rowStartSelected,
+			endFrame,
+			u.rowEndSelected,
+		))
+	//u.rowSelectionLayout.Resize(fyne.NewSize(200, 20))
+	selectionLayout := container.New(
+		layout.NewGridLayoutWithRows(3),
+		container.New(
+			layout.NewGridLayoutWithColumns(2),
+			goToFrameLabel,
+			gotToFrameEntry,
+		),
+		container.New(
+			layout.NewGridLayoutWithColumns(3),
+			displayChangementsButton,
+			returnToOriginalButton,
+			cleanButton,
+		),
+		container.New(
+			layout.NewGridLayoutWithColumns(2),
+			container.NewVScroll(registerCheckLayout),
+			u.rowSelectionLayout,
+		),
 	)
-
+	//selectionLayout.Resize(fyne.NewSize(400, 20))
 	u.table = widget.NewTable(
 		u.updateTableLength,
 		u.updateTableLabel,
@@ -373,55 +405,37 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.table.OnSelected = u.selectedTableCell
 	u.tableContainer = container.NewVScroll(u.table)
 	u.generateChart()
-	u.graphicContent = container.NewVScroll(u.graphic)
+	u.graphicContent = container.NewHScroll(u.graphic)
 
 	u.window = app.NewWindow("YeTi")
 	u.window.SetContent(
-		fyne.NewContainerWithLayout(
+		container.New(
 			layout.NewGridLayoutWithRows(2),
-			fyne.NewContainerWithLayout(
+			container.New(
 				layout.NewGridLayoutWithRows(3),
-				fyne.NewContainerWithLayout(
-					layout.NewGridLayoutWithRows(1),
+				container.New(
+					layout.NewGridLayoutWithColumns(2),
 					container.NewVScroll(
-						fyne.NewContainerWithLayout(
+						container.New(
 							layout.NewGridLayoutWithColumns(2),
 							u.fileDescription,
-						))),
-				fyne.NewContainerWithLayout(
+						)),
+					container.New(
+						layout.NewGridLayoutWithRows(2),
+						openButton,
+						saveButton),
+				),
+
+				container.New(
 					layout.NewGridLayout(1),
 					u.graphicContent,
 				),
-				fyne.NewContainerWithLayout(
-					layout.NewGridLayoutWithRows(2),
-					container.New(layout.NewVBoxLayout(),
-
-						fyne.NewContainerWithLayout(
-							layout.NewGridLayout(2),
-							openButton,
-							saveButton,
-						),
-						fyne.NewContainerWithLayout(
-							layout.NewGridLayout(1),
-							selectionLayout,
-						)),
-					fyne.NewContainerWithLayout(
-						layout.NewGridLayout(3),
-						fyne.NewContainerWithLayout(
-							layout.NewGridLayout(1),
-							displayChangementsButton,
-						),
-						fyne.NewContainerWithLayout(
-							layout.NewGridLayout(1),
-							returnToOriginalButton,
-						),
-						fyne.NewContainerWithLayout(
-							layout.NewGridLayout(1),
-							cleanButton,
-						)),
+				container.New(
+					layout.NewGridLayoutWithRows(1),
+					selectionLayout,
 				)),
 
-			fyne.NewContainerWithLayout(
+			container.New(
 				layout.NewGridLayout(1),
 				u.tableContainer,
 			),
