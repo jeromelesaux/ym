@@ -26,6 +26,7 @@ const (
 	YM3            = 0x594D3321
 	YM4            = 0x594D3421
 	YM5            = 0x594D3521
+	YM6            = 0x594D3621
 )
 
 func Unmarshall(data []byte, y *ym.Ym) error {

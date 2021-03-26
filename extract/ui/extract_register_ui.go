@@ -26,16 +26,13 @@ import (
 )
 
 var (
-	Appversion = "with auto refresh."
+	Appversion = "fix lha issue ."
 )
 
 type ui struct {
 	filename                string
 	ym                      *ym.Ym
-	fileSongAuthor          *widget.Label
-	fileSongName            *widget.Label
-	fileSongDescription     *widget.Label
-	fileFrameHz             *widget.Label
+	fileDescription         *widget.Label
 	rowStartSelected        *widget.Entry
 	rowEndSelected          *widget.Entry
 	frameStartSelectedIndex int
@@ -291,25 +288,10 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.ymToSave = ym.NewYm()
 	u.archiveFilename = "archive.ym"
 
-	u.fileSongAuthor = &widget.Label{Alignment: fyne.TextAlignTrailing}
-	u.fileSongAuthor.TextStyle.Monospace = true
-	u.fileSongAuthor.SetText("File song's Author :")
-	u.fileSongAuthor.Resize(fyne.Size{Height: 10, Width: 50})
-
-	u.fileSongName = &widget.Label{Alignment: fyne.TextAlignTrailing}
-	u.fileSongName.TextStyle.Monospace = true
-	u.fileSongName.SetText("File song's Name :")
-	u.fileSongName.Resize(fyne.Size{Height: 10, Width: 50})
-
-	u.fileSongDescription = &widget.Label{Alignment: fyne.TextAlignTrailing}
-	u.fileSongDescription.TextStyle.Monospace = true
-	u.fileSongDescription.SetText("File comment :")
-	u.fileSongDescription.Resize(fyne.Size{Height: 10, Width: 50})
-
-	u.fileFrameHz = &widget.Label{Alignment: fyne.TextAlignTrailing}
-	u.fileFrameHz.TextStyle.Monospace = true
-	u.fileFrameHz.SetText("Song frame in Hz:")
-	u.fileFrameHz.Resize(fyne.Size{Height: 10, Width: 50})
+	u.fileDescription = widget.NewLabel("File Description")
+	u.fileDescription.TextStyle.Monospace = true
+	u.fileDescription.SetText("File song's Author :")
+	u.fileDescription.Resize(fyne.Size{Height: 10, Width: 50})
 
 	openButton := widget.NewButton("File Open ym file (.ym)", u.OpenFileAction)
 	openButton.Resize(fyne.Size{Height: 1, Width: 50})
@@ -399,12 +381,12 @@ func (u *ui) LoadUI(app fyne.App) {
 			fyne.NewContainerWithLayout(
 				layout.NewGridLayoutWithRows(3),
 				fyne.NewContainerWithLayout(
-					layout.NewGridLayout(4),
-					u.fileSongAuthor,
-					u.fileSongName,
-					u.fileSongDescription,
-					u.fileFrameHz,
-				),
+					layout.NewGridLayoutWithRows(1),
+					container.NewVScroll(
+						fyne.NewContainerWithLayout(
+							layout.NewGridLayoutWithColumns(2),
+							u.fileDescription,
+						))),
 				fyne.NewContainerWithLayout(
 					layout.NewGridLayout(1),
 					u.graphicContent,
@@ -453,6 +435,7 @@ func (u *ui) LoadUI(app fyne.App) {
 
 func (u *ui) prepareExport() {
 	u.ymToSave = ym.CopyYm(u.ym)
+	u.ymToSave.LoopFrame = 0
 	length := u.frameEndSelectedIndex - u.frameStartSelectedIndex + 1
 	if length < 0 {
 		return
@@ -495,6 +478,7 @@ func (u *ui) DisplayChange() {
 	u.ymBackuped = u.ym
 	u.prepareExport()
 	u.ym = u.ymToSave
+	u.setFileDescription()
 	u.generateChart()
 	u.graphicContent.Refresh()
 	wait.Hide()
@@ -505,6 +489,7 @@ func (u *ui) CancelChange() {
 	wait := dialog.NewInformation("Get original file", "Please wait...", u.window)
 	wait.Show()
 	u.ym = u.ymBackuped
+	u.setFileDescription()
 	u.generateChart()
 	u.graphicContent.Refresh()
 	wait.Hide()
@@ -569,10 +554,20 @@ func (u *ui) OpenFileAction() {
 }
 
 func (u *ui) setFileDescription() {
-	u.fileSongAuthor.SetText("File song's Author :" + string(u.ym.AuthorName))
-	u.fileSongName.SetText("File song's Name :" + string(u.ym.SongName))
-	u.fileSongDescription.SetText("File song's comment :" + string(u.ym.SongComment))
-	u.fileFrameHz.SetText(fmt.Sprintf("Frame rate %d hz", u.ym.FrameHz))
+	desc := "File song's Author :" + string(u.ym.AuthorName) + "\n"
+	desc += "File song's Name :" + string(u.ym.SongName) + "\n"
+	desc += "File song's comment :" + string(u.ym.SongComment) + "\n"
+	desc += fmt.Sprintf("Frame rate %d hz", u.ym.FrameHz) + "\n"
+	desc += fmt.Sprintf("Number of frame %d ", u.ym.NbFrames) + "\n"
+	desc += fmt.Sprintf("Frame loop at %d", u.ym.LoopFrame) + "\n"
+	desc += fmt.Sprintf("Number of digidrums: %d", u.ym.DigidrumNb) + "\n"
+
+	var clock string = "ATARI-ST"
+	if u.ym.YmMasterClock == encoding.AMSTRAD_CLOCK {
+		clock = "AMSTRAD CPC"
+	}
+	desc += fmt.Sprintf("YM Master clock :%d %s", u.ym.YmMasterClock, clock) + "\n"
+	u.fileDescription.SetText(desc)
 }
 
 func (u *ui) loadYmFile(f fyne.URIReadCloser) {
@@ -611,6 +606,10 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 		}
 		fmt.Printf("NB frames:[%d]\n", u.ym.NbFrames)
 
+	}
+	// force to last version YM
+	if u.ym.FileID != encoding.YM6 {
+		u.ym.FileID = encoding.YM6
 	}
 	u.generateChart()
 	u.setFileDescription()
