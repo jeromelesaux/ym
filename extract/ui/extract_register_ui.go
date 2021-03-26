@@ -26,7 +26,8 @@ import (
 )
 
 var (
-	Appversion = "fix lha issue ."
+	Appversion = "new layout and force ym6 export"
+	dialogSize = fyne.NewSize(1000, 800)
 )
 
 type ui struct {
@@ -66,8 +67,8 @@ func (u *ui) generateChart() {
 	u.lock.Lock()
 	series := []chart.Series{}
 	maxX := u.ym.NbFrames
-	if maxX > 800 {
-		maxX = 800
+	if maxX > 500 {
+		maxX = 500
 	}
 	xseries := make([]float64, maxX)
 	for i := 0; i < int(maxX); i++ {
@@ -520,6 +521,7 @@ func (u *ui) SaveFileAction() {
 		}
 		dialog.ShowInformation("file saving", "You file "+filePath+" is saved.", u.window)
 	}, u.window)
+	fd.Resize(dialogSize)
 	fd.Show()
 }
 
@@ -550,6 +552,7 @@ func (u *ui) OpenFileAction() {
 		}
 	}
 	fd.SetFilter(storage.NewExtensionFileFilter([]string{".ym"}))
+	fd.Resize(dialogSize)
 	fd.Show()
 }
 
