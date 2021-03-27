@@ -22,11 +22,12 @@ import (
 	"github.com/jeromelesaux/lha"
 	"github.com/jeromelesaux/ym"
 	"github.com/jeromelesaux/ym/encoding"
+	w2 "github.com/jeromelesaux/ym/extract/ui/widget"
 	chart "github.com/wcharczuk/go-chart"
 )
 
 var (
-	Appversion = "new layout and force ym6 export"
+	Appversion = "new layout and speed up gfx"
 	dialogSize = fyne.NewSize(1000, 800)
 )
 
@@ -43,7 +44,7 @@ type ui struct {
 	table             *widget.Table
 	graphicContent    *container.Scroll
 	tableContainer    *container.Scroll
-	graphic           *canvas.Image
+	graphic           *w2.ClickableImage
 	registersSelected [16]bool
 	window            fyne.Window
 	lastDirectory     string
@@ -63,12 +64,21 @@ func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
 func (u *ui) onTypedRune(r rune) {
 }
 */
+
+func (u *ui) Tapped(
+	x float32, y float32) {
+	fmt.Printf("point X:%f,Y:%f\n",
+		x,
+		y)
+
+}
+
 func (u *ui) generateChart() {
 	u.lock.Lock()
 	series := []chart.Series{}
 	maxX := u.ym.NbFrames
-	if maxX > 500 {
-		maxX = 500
+	if maxX > 400 {
+		maxX = 400
 	}
 	xseries := make([]float64, maxX)
 	for i := 0; i < int(maxX); i++ {
@@ -94,7 +104,7 @@ func (u *ui) generateChart() {
 				Max: 255.0,
 			},
 		},
-		Width:  1800,
+		Width:  1200,
 		Height: 800,
 
 		Series: series,
@@ -112,7 +122,7 @@ func (u *ui) generateChart() {
 
 	png.Encode(fw, img)
 	fw.Close()
-	u.graphic = canvas.NewImageFromFile("tmp.png")
+	u.graphic.SetImage(canvas.NewImageFromFile("tmp.png"))
 }
 
 func (u *ui) updateTableLabel() fyne.CanvasObject {
@@ -404,8 +414,11 @@ func (u *ui) LoadUI(app fyne.App) {
 	)
 	u.table.OnSelected = u.selectedTableCell
 	u.tableContainer = container.NewVScroll(u.table)
+
+	u.graphic = w2.NewClickableImage(u.Tapped, nil)
 	u.generateChart()
-	u.graphicContent = container.NewHScroll(u.graphic)
+	u.graphicContent = container.NewHScroll(
+		u.graphic)
 
 	u.window = app.NewWindow("YeTi")
 	u.window.SetContent(
@@ -515,6 +528,7 @@ func (u *ui) ResetUI() {
 	u.ym = ym.NewYm()
 	u.ymToSave = ym.NewYm()
 	u.ymBackuped = ym.NewYm()
+	u.setFileDescription()
 	u.generateChart()
 	u.graphicContent.Refresh()
 }
