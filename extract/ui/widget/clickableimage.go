@@ -1,8 +1,6 @@
 package widget
 
 import (
-	"fmt"
-
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	w2 "fyne.io/fyne/v2/widget"
@@ -28,11 +26,11 @@ func NewClickableImage(f0 func(float32, float32), f1 func(float32, float32)) *Cl
 
 func (ci *ClickableImage) Tapped(
 	pe *fyne.PointEvent) {
-	fmt.Printf("point X:%f,Y:%f and absolute position X:%f,Y:%f\n",
-		pe.Position.X,
-		pe.Position.Y,
-		pe.AbsolutePosition.X,
-		pe.AbsolutePosition.Y)
+	/*fmt.Printf("point X:%f,Y:%f and absolute position X:%f,Y:%f\n",
+	pe.Position.X,
+	pe.Position.Y,
+	pe.AbsolutePosition.X,
+	pe.AbsolutePosition.Y)*/
 	if ci.toCallButton0 != nil {
 		(ci.toCallButton0)(pe.Position.X, pe.Position.Y)
 	}

@@ -27,7 +27,7 @@ import (
 )
 
 var (
-	Appversion = "new layout and speed up gfx"
+	Appversion = "new layout and speed up gfx clickable image"
 	dialogSize = fyne.NewSize(1000, 800)
 )
 
@@ -67,10 +67,25 @@ func (u *ui) onTypedRune(r rune) {
 
 func (u *ui) Tapped(
 	x float32, y float32) {
-	fmt.Printf("point X:%f,Y:%f\n",
-		x,
-		y)
+	size := u.graphicContent.Size()
+	percentage := x / size.Width * 100.
+	frame := 0
+	//fmt.Printf("percentage :%f\n", percentage)
+	if percentage < 1.5 {
+		frame = 0
+	} else {
+		if percentage > 95. {
+			frame = int(u.ym.NbFrames)
+		} else {
+			frame = int((float32(u.ym.NbFrames) * percentage) / 100.)
+		}
 
+	}
+	fmt.Printf("gotoframe %d\n", frame)
+	u.table.Select(widget.TableCellID{Row: frame, Col: 0})
+	u.table.Refresh()
+	// min 1,4 %
+	// max 95 %
 }
 
 func (u *ui) generateChart() {
@@ -98,6 +113,7 @@ func (u *ui) generateChart() {
 	}
 	u.lock.Unlock()
 	u.graph = &chart.Chart{
+		Elements: []chart.Renderable{},
 		YAxis: chart.YAxis{
 			Range: &chart.ContinuousRange{
 				Min: 0.0,
@@ -109,6 +125,7 @@ func (u *ui) generateChart() {
 
 		Series: series,
 	}
+
 	buffer := bytes.NewBuffer([]byte{})
 	err := u.graph.Render(chart.PNG, buffer)
 	if err != nil {
