@@ -27,8 +27,9 @@ import (
 )
 
 var (
-	Appversion = "new layout and speed up gfx clickable image"
-	dialogSize = fyne.NewSize(1000, 800)
+	Appversion               = "new layout and speed up gfx clickable image"
+	dialogSize               = fyne.NewSize(1000, 800)
+	graphicFileTemporaryFile = "yeti-gfx-cache.png"
 )
 
 type ui struct {
@@ -122,7 +123,7 @@ func (u *ui) generateChart() {
 		},
 		Width:  1200,
 		Height: 800,
-
+		DPI:    92 * 2,
 		Series: series,
 	}
 
@@ -135,11 +136,11 @@ func (u *ui) generateChart() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error while decoding png image : %v \n", err)
 	}
-	fw, _ := os.Create("tmp.png")
+	fw, _ := os.Create(graphicFileTemporaryFile)
 
 	png.Encode(fw, img)
 	fw.Close()
-	u.graphic.SetImage(canvas.NewImageFromFile("tmp.png"))
+	u.graphic.SetImage(canvas.NewImageFromFile(graphicFileTemporaryFile))
 }
 
 func (u *ui) updateTableLabel() fyne.CanvasObject {
@@ -609,6 +610,7 @@ func (u *ui) setFileDescription() {
 	desc += fmt.Sprintf("Number of frame %d ", u.ym.NbFrames) + "\n"
 	desc += fmt.Sprintf("Frame loop at %d", u.ym.LoopFrame) + "\n"
 	desc += fmt.Sprintf("Number of digidrums: %d", u.ym.DigidrumNb) + "\n"
+	desc += fmt.Sprintf("YM format :%s\n", u.ym.FormatType())
 
 	var clock string = "ATARI-ST"
 	if u.ym.YmMasterClock == encoding.AMSTRAD_CLOCK {
@@ -655,10 +657,7 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 		fmt.Printf("NB frames:[%d]\n", u.ym.NbFrames)
 
 	}
-	// force to last version YM
-	if u.ym.FileID != encoding.YM6 {
-		u.ym.FileID = encoding.YM6
-	}
+
 	u.generateChart()
 	u.setFileDescription()
 
@@ -667,8 +666,11 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
 	writer.Close()
 	os.Remove(filePath)
-	ym := u.ymToSave
-	content, err := encoding.Marshall(ym)
+	// force to last version YM
+	if u.ymToSave.FileID != ym.YM6 {
+		u.ymToSave.FileID = ym.YM6
+	}
+	content, err := encoding.Marshall(u.ymToSave)
 	if err != nil {
 		return err
 	}

@@ -1,5 +1,14 @@
 package ym
 
+const (
+	YM1 = 0x594D3121
+	YM2 = 0x594D3221
+	YM3 = 0x594D3321
+	YM4 = 0x594D3421
+	YM5 = 0x594D3521
+	YM6 = 0x594D3621
+)
+
 type Ym struct {
 	FileID         uint32
 	CheckString    [8]byte
@@ -69,4 +78,23 @@ func CopyYm(ym *Ym) *Ym {
 	}
 	n.EndID = ym.EndID
 	return n
+}
+
+func (y *Ym) FormatType() string {
+	switch y.FileID {
+	case YM1:
+		return "YM1"
+	case YM2:
+		return "YM2"
+	case YM3:
+		return "YM3"
+	case YM4:
+		return "YM4"
+	case YM5:
+		return "YM5"
+	case YM6:
+		return "YM6"
+	default:
+		return "Unknown"
+	}
 }

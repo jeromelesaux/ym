@@ -23,10 +23,6 @@ const (
 	MFP_CLOCK      = 2457600
 	NOISESIZE      = 16384
 	DRUM_PREC      = 15
-	YM3            = 0x594D3321
-	YM4            = 0x594D3421
-	YM5            = 0x594D3521
-	YM6            = 0x594D3621
 )
 
 func Unmarshall(data []byte, y *ym.Ym) error {
@@ -34,7 +30,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.FileID); err != nil {
 		return err
 	}
-	if y.FileID <= YM4 {
+	if y.FileID <= ym.YM4 {
 		return UmarshallOlderYm(r, data, y)
 	}
 
