@@ -123,7 +123,6 @@ func (u *ui) generateChart() {
 		},
 		Width:  1200,
 		Height: 800,
-		DPI:    92 * 2,
 		Series: series,
 	}
 
