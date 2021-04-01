@@ -177,21 +177,27 @@ func (c *CYm2149Ex) writeRegister(reg, data int32) {
 
 	case 7:
 		c.registers[7] = byte(data & 255)
+		c.mixerTA = 0
 		if data&(1<<0) != 0 {
 			c.mixerTA = 0xffff
 		}
+		c.mixerTB = 0
 		if data&(1<<1) != 0 {
 			c.mixerTB = 0xffff
 		}
+		c.mixerTC = 0
 		if data&(1<<2) != 0 {
 			c.mixerTC = 0xffff
 		}
+		c.mixerNA = 0
 		if data&(1<<3) != 0 {
 			c.mixerNA = 0xffff
 		}
+		c.mixerNB = 0
 		if data&(1<<4) != 0 {
 			c.mixerNB = 0xffff
 		}
+		c.mixerNC = 0
 		if data&(1<<5) != 0 {
 			c.mixerNC = 0xffff
 		}
@@ -319,9 +325,6 @@ func (c *CYm2149Ex) syncBuzzerStart(timerFreq, envShape int32) {
 func (c *CYm2149Ex) update(pSampleBuffer *[]int16, pIndex int32, nbSample int32) {
 	if nbSample > 0 {
 		for {
-			if nbSample == 142 {
-				fmt.Printf("debug")
-			}
 			(*pSampleBuffer)[pIndex] = c.nextSample()
 			pIndex++
 			nbSample--
