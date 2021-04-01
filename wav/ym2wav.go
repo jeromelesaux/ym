@@ -186,10 +186,10 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 		y.SongType = YM_V6
 	case ym.YMT1:
 		y.SongType = YM_MIX1
-		y.trackerInit(100)
+	//	y.trackerInit(100)
 	case ym.YMT2:
 		y.SongType = YM_MIX2
-		y.trackerInit(100)
+		//	y.trackerInit(100)
 	}
 
 	for i := 0; i < 16; i++ {

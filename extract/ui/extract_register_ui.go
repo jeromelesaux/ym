@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"image/png"
 
@@ -18,16 +19,21 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/storage"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/speaker"
+	wav2 "github.com/faiface/beep/wav"
 	"github.com/jeromelesaux/lha"
 	"github.com/jeromelesaux/ym"
 	"github.com/jeromelesaux/ym/encoding"
 	w2 "github.com/jeromelesaux/ym/extract/ui/widget"
+	"github.com/jeromelesaux/ym/wav"
 	chart "github.com/wcharczuk/go-chart"
 )
 
 var (
-	Appversion               = "new layout and speed up gfx clickable image"
+	Appversion               = "with sound preview"
 	dialogSize               = fyne.NewSize(1000, 800)
 	graphicFileTemporaryFile = "yeti-gfx-cache.png"
 )
@@ -56,6 +62,7 @@ type ui struct {
 	archiveFilename   string
 	lock              sync.Mutex
 	graph             *chart.Chart
+	speakerDone       chan bool
 }
 
 /*
@@ -323,17 +330,73 @@ func NewUI() *ui {
 	return u
 }
 
+func (u *ui) play() {
+
+	go func() {
+
+		v := wav.NewYMMusic()
+		v.LoadMemory(u.ym)
+		content, err := v.Wave()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error while converting ym to wave with error :%v\n", err.Error())
+			return
+		}
+		r := bytes.NewReader(content)
+
+		streamer, format, err := wav2.Decode(r)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error while streaming wave with error :%v\n", err.Error())
+			return
+		}
+		defer streamer.Close()
+
+		speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+			fmt.Printf("Googbye go routine\n")
+		})))
+		fmt.Printf("Speaker play the new file %v\n", format)
+		for {
+			select {
+			case <-u.speakerDone:
+
+				streamer.Close()
+				speaker.Clear()
+				//speaker.Close()
+				fmt.Printf("now the speaker is cleared\n")
+				return
+			}
+		}
+
+	}()
+
+}
+
+func (u *ui) stop() {
+
+	u.speakerDone <- true
+
+}
+
 func (u *ui) LoadUI(app fyne.App) {
 
 	u.ym = ym.NewYm()
 	u.ymBackuped = ym.NewYm()
 	u.ymToSave = ym.NewYm()
 	u.archiveFilename = "archive.ym"
-
+	u.speakerDone = make(chan bool)
+	format := beep.Format{SampleRate: 44100}
+	err := speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error while initialising speaker : %v\n", err)
+		return
+	}
+	fmt.Printf("Speaker init ok\n")
 	u.fileDescription = widget.NewLabel("File Description")
 	u.fileDescription.TextStyle.Monospace = true
 	u.fileDescription.SetText("File song's Author :")
 	u.fileDescription.Resize(fyne.Size{Height: 10, Width: 50})
+
+	playButton := widget.NewButtonWithIcon("Play", theme.MediaPlayIcon(), u.play)
+	stopButton := widget.NewButtonWithIcon("Stop", theme.MediaStopIcon(), u.stop)
 
 	openButton := widget.NewButton("File Open ym file (.ym)", u.OpenFileAction)
 	openButton.Resize(fyne.Size{Height: 1, Width: 50})
@@ -451,9 +514,14 @@ func (u *ui) LoadUI(app fyne.App) {
 							u.fileDescription,
 						)),
 					container.New(
-						layout.NewGridLayoutWithRows(2),
+						layout.NewGridLayoutWithRows(3),
 						openButton,
-						saveButton),
+						saveButton,
+						container.New(
+							layout.NewGridLayoutWithColumns(2),
+							playButton,
+							stopButton,
+						)),
 				),
 
 				container.New(
