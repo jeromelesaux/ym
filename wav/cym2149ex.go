@@ -77,8 +77,11 @@ func NewCYm2149Ex(masterClock uint32, prediv int32, playRate uint32) *CYm2149Ex 
 	}
 	for env := 0; env < 16; env++ {
 		pse := EnvWave[env]
-		for phase := 0; phase < 4; phase++ {
-			ym2149EnvInit(&c.envData[0][0], pse[phase*2+0], pse[phase*2+1])
+		for phase := 0; phase < 2; phase++ {
+			c.ym2149EnvInit(env, 0, phase, pse[phase*2+0], pse[phase*2+1])
+		}
+		for phase := 2; phase < 4; phase++ {
+			c.ym2149EnvInit(env, 1, phase-2, pse[phase*2+0], pse[phase*2+1])
 		}
 	}
 	c.internalClock = masterClock / uint32(prediv) // YM at 2Mhz on ATARI ST
@@ -316,6 +319,9 @@ func (c *CYm2149Ex) syncBuzzerStart(timerFreq, envShape int32) {
 func (c *CYm2149Ex) update(pSampleBuffer *[]int16, pIndex int32, nbSample int32) {
 	if nbSample > 0 {
 		for {
+			if nbSample == 142 {
+				fmt.Printf("debug")
+			}
 			(*pSampleBuffer)[pIndex] = c.nextSample()
 			pIndex++
 			nbSample--
@@ -378,14 +384,14 @@ func (c *CYm2149Ex) sidVolumeCompute(voice int32, pVol *int32) {
 
 func (c *CYm2149Ex) nextSample() int16 {
 
-	var vol uint32
-	var bt, bn uint32
+	var vol int32
+	var bt, bn int32
 
 	if (c.noisePos & 0xffff0000) != 0 {
 		c.currentNoise ^= c.rndCompute()
 		c.noisePos &= 0xffff
 	}
-	bn = c.currentNoise
+	bn = int32(c.currentNoise)
 
 	c.volE = ymVolumeTable[c.envData[c.envShape][c.envPhase][c.envPos>>(32-5)]]
 
@@ -396,12 +402,12 @@ func (c *CYm2149Ex) nextSample() int16 {
 	//---------------------------------------------------
 	// Tone+noise+env+DAC for three voices !
 	//---------------------------------------------------
-	bt = (((c.posA) >> 31) | c.mixerTA) & (bn | c.mixerNA)
-	vol = uint32(*c.pVolA) & bt
-	bt = (((c.posB) >> 31) | c.mixerTB) & (bn | c.mixerNB)
-	vol += uint32(*c.pVolB) & bt
-	bt = (((c.posC) >> 31) | c.mixerTC) & (bn | c.mixerNC)
-	vol += uint32(*c.pVolC) & bt
+	bt = ((int32(c.posA) >> 31) | int32(c.mixerTA)) & (bn | int32(c.mixerNA))
+	vol = int32(*c.pVolA) & bt
+	bt = ((int32(c.posB) >> 31) | int32(c.mixerTB)) & (bn | int32(c.mixerNB))
+	vol += int32(*c.pVolB) & bt
+	bt = ((int32(c.posC) >> 31) | int32(c.mixerTC)) & (bn | int32(c.mixerNC))
+	vol += int32(*c.pVolC) & bt
 
 	//---------------------------------------------------
 	// Inc
@@ -411,7 +417,7 @@ func (c *CYm2149Ex) nextSample() int16 {
 	c.posC += c.stepC
 	c.noisePos += c.noiseStep
 	c.envPos += c.envStep
-	if 0 == c.envPhase {
+	if c.envPhase == 0 {
 		if c.envPos < c.envStep {
 			c.envPhase = 1
 		}
@@ -431,7 +437,7 @@ func (c *CYm2149Ex) nextSample() int16 {
 	//---------------------------------------------------
 	// Normalize process
 	//---------------------------------------------------
-	c.dcAdjust.AddSample(int32(vol))
+	c.dcAdjust.AddSample(vol)
 	in := int(vol) - int(c.dcAdjust.GetDcLevel())
 	if c.bFilter {
 		return int16(c.LowPassFilter(in))
@@ -446,14 +452,15 @@ func (c *CYm2149Ex) LowPassFilter(in int) int {
 	return out
 }
 
-func ym2149EnvInit(pEnv *[]byte, a, b int32) byte {
+func (c *CYm2149Ex) ym2149EnvInit(index0, index1, indexStart int, a, b int32) byte {
 	d := b - a
 	a *= 15
-	var pEnvIndex int
+	var pEnvIndex int = 16 * indexStart
 	for i := 0; i < 16; i++ {
-		(*pEnv)[pEnvIndex] = byte(a)
+		c.envData[index0][index1][pEnvIndex] = byte(a)
+		//(*pEnv)[pEnvIndex] = byte(a)
 		pEnvIndex++
 		a += d
 	}
-	return (*pEnv)[pEnvIndex]
+	return c.envData[index0][index1][pEnvIndex-1]
 }
