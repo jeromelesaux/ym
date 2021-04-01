@@ -1,6 +1,7 @@
 package wav
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -78,12 +79,12 @@ type YMMusic struct {
 	currentFrame     int
 	loopFrame        int
 	bMusicOver       bool
-	streamInc        int
+	//streamInc        int
 
-	pDataStream             [][]byte // structure deinterleave frame by frame
-	bMusicOk                bool
-	bPause                  bool
-	nbTimerKey              int32
+	pDataStream [][]byte // structure deinterleave frame by frame
+	bMusicOk    bool
+	bPause      bool
+	//nbTimerKey              int32
 	pTimeInfo               *TimeKey
 	musicLenInMs            uint32
 	iMusicPosAccurateSample uint32
@@ -236,6 +237,54 @@ func getMusicTime(v *ym.Ym) int32 {
 		return int32(v.NbFrames) * 1000 / int32(v.FrameHz)
 	}
 	return 0
+}
+
+func (y *YMMusic) Wave() ([]byte, error) {
+	head := &WAVEHeader{}
+
+	wavWriter := &bytes.Buffer{}
+
+	if err := binary.Write(wavWriter, binary.LittleEndian, head); err != nil {
+		return wavWriter.Bytes(), err
+	}
+	y.bLoop = false
+	totalNbSample := 0
+	convertBuffer := make([]int16, 1024)
+
+	for {
+		ok := y.MusicCompute(&convertBuffer, NBSAMPLEPERBUFFER)
+
+		if err := binary.Write(wavWriter, binary.LittleEndian, convertBuffer); err != nil {
+			return wavWriter.Bytes(), err
+		}
+		totalNbSample += NBSAMPLEPERBUFFER
+
+		if !ok {
+			break
+		}
+	}
+
+	finalHeader := &bytes.Buffer{}
+	head.RIFFMagic = ID_RIFF
+	head.FileType = ID_WAVE
+	head.FormMagic = ID_FMT
+	head.DataMagic = ID_DATA
+	head.FormLength = 0x10
+	head.SampleFormat = 1
+	head.NumChannels = 1
+	head.PlayRate = 44100
+	head.BitsPerSample = 16
+	head.BytesPerSec = 44100 * (16 / 8)
+	head.Pad = (16 / 8)
+	head.DataLength = uint32(totalNbSample) * (16 / 8)
+	head.FileLength = head.DataLength + 44 - 8 // 44 sizeof waveheader
+
+	if err := binary.Write(finalHeader, binary.LittleEndian, head); err != nil {
+		return wavWriter.Bytes(), err
+	}
+	wavContent := wavWriter.Bytes()
+	copy(wavContent[0:], finalHeader.Bytes())
+	return wavContent, nil
 }
 
 func (y *YMMusic) WaveFile(wavFilepath string) error {
