@@ -287,7 +287,7 @@ func (c *CYm2149Ex) noiseStepCompute(rNoise byte) uint32 {
 }
 
 func (c *CYm2149Ex) sidStart(voice, timerFreq, vol int32) {
-	tmp := int(timerFreq) * ((1 << 31) / int(c.replayFrequency))
+	var tmp uint = uint(timerFreq) * ((1 << 31) / uint(c.replayFrequency))
 	c.specialEffect[voice].sidStep = uint32(tmp)
 	c.specialEffect[voice].sidVol = vol & 15
 	c.specialEffect[voice].bSid = true

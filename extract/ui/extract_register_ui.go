@@ -63,6 +63,10 @@ type ui struct {
 	lock              sync.Mutex
 	graph             *chart.Chart
 	speakerDone       chan bool
+	playerTime        *widget.Label
+	playerTimeTicker  *time.Ticker
+	playerTimeChan    chan bool
+	playerTimeValue   float64
 }
 
 /*
@@ -331,7 +335,22 @@ func NewUI() *ui {
 }
 
 func (u *ui) play() {
+	u.playerTimeTicker = time.NewTicker(time.Millisecond * 10)
+	u.playerTimeValue = 0
 
+	go func() {
+		for {
+			select {
+			case <-u.playerTimeChan:
+				u.playerTime.SetText("Player stopped.")
+				return
+			case <-u.playerTimeTicker.C:
+				u.playerTimeValue += .01
+				label := fmt.Sprintf("Time: %.2f s", u.playerTimeValue)
+				u.playerTime.SetText(label)
+			}
+		}
+	}()
 	go func() {
 
 		v := wav.NewYMMusic()
@@ -351,9 +370,11 @@ func (u *ui) play() {
 		defer streamer.Close()
 
 		speaker.Play(beep.Seq(streamer, beep.Callback(func() {
+			u.playerTimeChan <- true
 			fmt.Printf("Googbye go routine\n")
 		})))
 		fmt.Printf("Speaker play the new file %v\n", format)
+
 		for {
 			select {
 			case <-u.speakerDone:
@@ -373,7 +394,7 @@ func (u *ui) play() {
 func (u *ui) stop() {
 
 	u.speakerDone <- true
-
+	u.playerTimeChan <- true
 }
 
 func (u *ui) LoadUI(app fyne.App) {
@@ -383,6 +404,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.ymToSave = ym.NewYm()
 	u.archiveFilename = "archive.ym"
 	u.speakerDone = make(chan bool)
+	u.playerTimeChan = make(chan bool)
 	format := beep.Format{SampleRate: 44100}
 	err := speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 	if err != nil {
@@ -397,6 +419,7 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	playButton := widget.NewButtonWithIcon("Play", theme.MediaPlayIcon(), u.play)
 	stopButton := widget.NewButtonWithIcon("Stop", theme.MediaStopIcon(), u.stop)
+	u.playerTime = widget.NewLabel("Time:")
 
 	openButton := widget.NewButton("File Open ym file (.ym)", u.OpenFileAction)
 	openButton.Resize(fyne.Size{Height: 1, Width: 50})
@@ -518,7 +541,8 @@ func (u *ui) LoadUI(app fyne.App) {
 						openButton,
 						saveButton,
 						container.New(
-							layout.NewGridLayoutWithColumns(2),
+							layout.NewGridLayoutWithColumns(3),
+							u.playerTime,
 							playButton,
 							stopButton,
 						)),
