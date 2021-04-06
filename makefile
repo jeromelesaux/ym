@@ -27,6 +27,7 @@ build:
 	GOOS=linux && CGO_ENABLED=1 && go build ${LDFLAGS} -o YeTi $(SOURCEDIR)/
 	zip YeTi-$(appversion)-linux.zip YeTi
 	@echo "Compilation for macos"
+	rm -f $(SOURCEDIR)/extract
 	fyne package -os darwin -icon  $(SOURCEDIR)/icon/YeTi.png -name YeTi -sourceDir $(SOURCEDIR)/
 	zip -r YeTi-$(appversion)-macos.zip YeTi.app
 	@echo "Compilation for windows"

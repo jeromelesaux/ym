@@ -101,3 +101,38 @@ func (y *Ym) FormatType() string {
 		return "Unknown"
 	}
 }
+
+func (y *Ym) Extract(startFrame, endFrame int) *Ym {
+	n := NewYm()
+	n.FileID = y.FileID
+	n.NbFrames = y.NbFrames
+	n.SongAttributes = y.SongAttributes
+	n.YmMasterClock = y.YmMasterClock
+	n.FrameHz = y.FrameHz
+	n.LoopFrame = y.LoopFrame
+	n.Size = y.Size
+
+	n.DigidrumNb = y.DigidrumNb
+	n.Digidrums = make([]Digidrum, y.DigidrumNb)
+	for i := 0; i < int(y.DigidrumNb); i++ {
+		n.Digidrums[i].SampleSize = y.Digidrums[i].SampleSize
+		n.Digidrums[i].SampleData = make([]byte, n.Digidrums[i].SampleSize)
+		copy(n.Digidrums[i].SampleData, y.Digidrums[i].SampleData)
+	}
+
+	n.SongName = append(n.SongName, y.SongName...)
+	n.SongComment = append(n.SongComment, y.SongComment...)
+	n.AuthorName = append(n.AuthorName, y.AuthorName...)
+
+	for j := 0; j < 16; j++ {
+		n.Data[j] = make([]byte, endFrame-startFrame)
+		index := 0
+		for i := startFrame; i < endFrame; i++ {
+			n.Data[j][index] = y.Data[j][i]
+			index++
+		}
+	}
+	n.EndID = y.EndID
+	n.NbFrames = uint32(endFrame) - uint32(startFrame)
+	return n
+}

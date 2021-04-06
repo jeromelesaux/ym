@@ -48,8 +48,8 @@ type ui struct {
 	frameEndSelectedIndex   int
 	rowSelectionLayout      *container.Scroll
 
-	table             *widget.Table
-	graphicContent    *container.Scroll
+	table *widget.Table
+	//graphicContent    *container.Scroll
 	tableContainer    *container.Scroll
 	graphic           *w2.ClickableImage
 	registersSelected [16]bool
@@ -67,6 +67,7 @@ type ui struct {
 	playerTimeTicker  *time.Ticker
 	playerTimeChan    chan bool
 	playerTimeValue   float64
+	playerIsPlaying   bool
 }
 
 /*
@@ -79,7 +80,8 @@ func (u *ui) onTypedRune(r rune) {
 
 func (u *ui) Tapped(
 	x float32, y float32) {
-	size := u.graphicContent.Size()
+	//size := u.graphicContent.Size()
+	size := u.graphic.Size()
 	percentage := x / size.Width * 100.
 	frame := 0
 	//fmt.Printf("percentage :%f\n", percentage)
@@ -133,7 +135,7 @@ func (u *ui) generateChart() {
 			},
 		},
 		Width:  1200,
-		Height: 800,
+		Height: 200,
 		Series: series,
 	}
 
@@ -151,6 +153,10 @@ func (u *ui) generateChart() {
 	png.Encode(fw, img)
 	fw.Close()
 	u.graphic.SetImage(canvas.NewImageFromFile(graphicFileTemporaryFile))
+	//u.graphic.Resize(fyne.Size{Width: 800, Height: 200})
+	//	u.graphicContent.Resize(fyne.Size{Width: 800, Height: 200})
+	fmt.Printf("Graphic size %f, %f\n", u.graphic.Size().Height, u.graphic.MinSize().Width)
+
 }
 
 func (u *ui) updateTableLabel() fyne.CanvasObject {
@@ -335,8 +341,29 @@ func NewUI() *ui {
 }
 
 func (u *ui) play() {
+	if u.playerIsPlaying {
+		return
+	}
 	u.playerTimeTicker = time.NewTicker(time.Millisecond * 10)
 	u.playerTimeValue = 0
+	u.playerIsPlaying = true
+	var y *ym.Ym
+	var err error
+	u.frameEndSelectedIndex, err = strconv.Atoi(u.rowEndSelected.Text)
+	if err != nil {
+		u.frameEndSelectedIndex = int(u.ym.NbFrames) - 1
+	}
+	if u.frameEndSelectedIndex < 0 || u.frameEndSelectedIndex > int(u.ym.NbFrames) {
+		u.frameEndSelectedIndex = int(u.ym.NbFrames) - 1
+	}
+	u.frameStartSelectedIndex, err = strconv.Atoi(u.rowStartSelected.Text)
+	if err != nil {
+		u.frameStartSelectedIndex = 0
+	}
+	if u.frameStartSelectedIndex < 0 || u.frameStartSelectedIndex > int(u.ym.NbFrames) {
+		u.frameStartSelectedIndex = 0
+	}
+	y = u.ym.Extract(u.frameStartSelectedIndex, u.frameEndSelectedIndex)
 
 	go func() {
 		for {
@@ -354,7 +381,7 @@ func (u *ui) play() {
 	go func() {
 
 		v := wav.NewYMMusic()
-		v.LoadMemory(u.ym)
+		v.LoadMemory(y)
 		content, err := v.Wave()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error while converting ym to wave with error :%v\n", err.Error())
@@ -382,7 +409,7 @@ func (u *ui) play() {
 				streamer.Close()
 				speaker.Clear()
 				//speaker.Close()
-				fmt.Printf("now the speaker is cleared\n")
+				fmt.Printf("Now the speaker is cleared\n")
 				return
 			}
 		}
@@ -395,6 +422,7 @@ func (u *ui) stop() {
 
 	u.speakerDone <- true
 	u.playerTimeChan <- true
+	u.playerIsPlaying = false
 }
 
 func (u *ui) LoadUI(app fyne.App) {
@@ -467,7 +495,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	registersSelectionCheckedButton[0] = widget.NewCheck("select all registers", registersSelectFuncs[0])
 	registerCheckLayout.Add(registersSelectionCheckedButton[0])
 	for i := 1; i < 17; i++ {
-		registersSelectionCheckedButton[i] = widget.NewCheck(fmt.Sprintf("register %d", i),
+		registersSelectionCheckedButton[i] = widget.NewCheck(fmt.Sprintf("register %d", i-1),
 			registersSelectFuncs[i])
 		registerCheckLayout.Add(registersSelectionCheckedButton[i])
 	}
@@ -520,8 +548,8 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	u.graphic = w2.NewClickableImage(u.Tapped, nil)
 	u.generateChart()
-	u.graphicContent = container.NewHScroll(
-		u.graphic)
+	//	u.graphicContent = container.NewHScroll(
+	//		u.graphic)
 
 	u.window = app.NewWindow("YeTi")
 	u.window.SetContent(
@@ -550,7 +578,8 @@ func (u *ui) LoadUI(app fyne.App) {
 
 				container.New(
 					layout.NewGridLayout(1),
-					u.graphicContent,
+					//u.graphicContent,
+					u.graphic,
 				),
 				container.New(
 					layout.NewGridLayoutWithRows(1),
@@ -564,7 +593,7 @@ func (u *ui) LoadUI(app fyne.App) {
 		))
 	//	u.window.Canvas().SetOnTypedRune(u.onTypedRune)
 	//	u.window.Canvas().SetOnTypedKey(u.onTypedKey)
-	u.window.Resize(fyne.NewSize(700, 600))
+	u.window.Resize(fyne.NewSize(400, 1000))
 	u.window.SetTitle("YeTi @ " + Appversion)
 	u.window.Show()
 
@@ -617,7 +646,7 @@ func (u *ui) DisplayChange() {
 	u.ym = u.ymToSave
 	u.setFileDescription()
 	u.generateChart()
-	u.graphicContent.Refresh()
+	//	u.graphicContent.Refresh()
 	wait.Hide()
 	//	u.window.Resize(fyne.NewSize(700, 600))
 }
@@ -628,7 +657,7 @@ func (u *ui) CancelChange() {
 	u.ym = u.ymBackuped
 	u.setFileDescription()
 	u.generateChart()
-	u.graphicContent.Refresh()
+	//	u.graphicContent.Refresh()
 	wait.Hide()
 	//	u.window.Resize(fyne.NewSize(700, 600))
 }
@@ -639,7 +668,7 @@ func (u *ui) ResetUI() {
 	u.ymBackuped = ym.NewYm()
 	u.setFileDescription()
 	u.generateChart()
-	u.graphicContent.Refresh()
+	//	u.graphicContent.Refresh()
 }
 
 func (u *ui) SaveFileAction() {
@@ -677,7 +706,7 @@ func (u *ui) OpenFileAction() {
 		alert := dialog.NewInformation("loading file", "Please Wait", u.window)
 		alert.Show()
 		u.loadYmFile(reader)
-		u.graphicContent.Refresh()
+		//	u.graphicContent.Refresh()
 		alert.Hide()
 
 	}, u.window)
