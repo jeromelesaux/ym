@@ -135,7 +135,7 @@ func (u *ui) generateChart() {
 			},
 		},
 		Width:  1200,
-		Height: 200,
+		Height: 180,
 		Series: series,
 	}
 
