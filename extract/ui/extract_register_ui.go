@@ -155,8 +155,7 @@ func (u *ui) generateChart() {
 	u.graphic.SetImage(canvas.NewImageFromFile(graphicFileTemporaryFile))
 	//u.graphic.Resize(fyne.Size{Width: 800, Height: 200})
 	//	u.graphicContent.Resize(fyne.Size{Width: 800, Height: 200})
-	fmt.Printf("Graphic size %f, %f\n", u.graphic.Size().Height, u.graphic.MinSize().Width)
-
+	//fmt.Printf("Graphic size %f, %f\n", u.graphic.Size().Height, u.graphic.MinSize().Width)
 }
 
 func (u *ui) updateTableLabel() fyne.CanvasObject {
@@ -419,10 +418,12 @@ func (u *ui) play() {
 }
 
 func (u *ui) stop() {
-
-	u.speakerDone <- true
+	if u.playerIsPlaying {
+		u.speakerDone <- true
+	}
 	u.playerTimeChan <- true
 	u.playerIsPlaying = false
+
 }
 
 func (u *ui) LoadUI(app fyne.App) {
