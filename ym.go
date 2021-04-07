@@ -67,6 +67,7 @@ func CopyYm(ym *Ym) *Ym {
 	n.Digidrums = make([]Digidrum, ym.DigidrumNb)
 	for i := 0; i < int(ym.DigidrumNb); i++ {
 		n.Digidrums[i].SampleSize = ym.Digidrums[i].SampleSize
+		n.Digidrums[i].RepLen = ym.Digidrums[i].RepLen
 		n.Digidrums[i].SampleData = make([]byte, n.Digidrums[i].SampleSize)
 		copy(n.Digidrums[i].SampleData, ym.Digidrums[i].SampleData)
 	}
@@ -122,6 +123,7 @@ func (y *Ym) Extract(startFrame, endFrame int) *Ym {
 		n.Digidrums[i].SampleSize = y.Digidrums[i].SampleSize
 		n.Digidrums[i].SampleData = make([]byte, n.Digidrums[i].SampleSize)
 		copy(n.Digidrums[i].SampleData, y.Digidrums[i].SampleData)
+		n.Digidrums[i].RepLen = y.Digidrums[i].RepLen
 	}
 
 	n.SongName = append(n.SongName, y.SongName...)
