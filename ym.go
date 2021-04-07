@@ -13,26 +13,29 @@ const (
 )
 
 type Ym struct {
-	FileID         uint32
-	CheckString    [8]byte
-	NbFrames       uint32
-	SongAttributes uint32
-	DigidrumNb     uint16
-	YmMasterClock  uint32
-	FrameHz        uint16
-	LoopFrame      uint32
-	Size           uint16
-	Digidrums      []Digidrum
-	SongName       []byte
-	AuthorName     []byte
-	SongComment    []byte
-	Data           [16][]byte
-	EndID          uint32
+	FileID           uint32
+	CheckString      [8]byte
+	NbVoice          int16
+	TrackerFreqShift int
+	NbFrames         uint32
+	SongAttributes   uint32
+	DigidrumNb       uint16
+	YmMasterClock    uint32
+	FrameHz          uint16
+	LoopFrame        uint32
+	Size             uint16
+	Digidrums        []Digidrum
+	SongName         []byte
+	AuthorName       []byte
+	SongComment      []byte
+	Data             [16][]byte
+	EndID            uint32
 }
 
 type Digidrum struct {
 	SampleSize uint32
 	SampleData []byte
+	RepLen     uint32
 }
 
 func NewYm() *Ym {
@@ -79,6 +82,7 @@ func CopyYm(ym *Ym) *Ym {
 			n.Data[j][i] = ym.Data[j][i]
 		}
 	}
+	n.NbVoice = ym.NbVoice
 	n.EndID = ym.EndID
 	return n
 }
@@ -132,6 +136,7 @@ func (y *Ym) Extract(startFrame, endFrame int) *Ym {
 			index++
 		}
 	}
+	n.NbVoice = y.NbVoice
 	n.EndID = y.EndID
 	n.NbFrames = uint32(endFrame) - uint32(startFrame)
 	return n

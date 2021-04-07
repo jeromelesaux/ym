@@ -45,7 +45,7 @@ type ymTrackerVoice struct {
 	repLen       uint32
 	sampleVolume int32
 	sampleFreq   uint32
-	bLoop        bool
+	bLoop        int
 	bRunning     bool
 }
 
@@ -100,7 +100,7 @@ type YMMusic struct {
 	nbVoice                 int
 	nbFrame                 int
 	ymTrackerFreqShift      int
-	ymTrackerVolumeTable    []byte
+	ymTrackerVolumeTable    []int16
 }
 
 type WAVEHeader struct {
@@ -129,7 +129,7 @@ func NewYMMusic() *YMMusic {
 		pDataStream:          make([][]byte, 16),
 		pMixBlock:            make([]MixBlock, 0),
 		pDrumTab:             make([]ym.Digidrum, 0),
-		ymTrackerVolumeTable: make([]byte, 256*64),
+		ymTrackerVolumeTable: make([]int16, 256*64),
 		playerRate:           50,
 		replayRate:           44100,
 		pTimeInfo:            &TimeKey{},
@@ -148,7 +148,7 @@ func (y *YMMusic) trackerInit(volMaxPercent int32) {
 	index := 0
 	for vol := 0; vol < 64; vol++ {
 		for s := -128; s < 128; s++ {
-			y.ymTrackerVolumeTable[index] = byte((s * int(scale) * vol) / 64)
+			y.ymTrackerVolumeTable[index] = int16((s * int(scale) * vol) / 64)
 			index++
 		}
 	}
@@ -170,9 +170,12 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 	y.nbDrum = int(v.DigidrumNb)
 	y.pDrumTab = make([]ym.Digidrum, v.DigidrumNb)
 	for i := 0; i < y.nbDrum; i++ {
+		y.pDrumTab[i].SampleData = make([]byte, len(v.Digidrums[i].SampleData))
 		copy(y.pDrumTab[i].SampleData, v.Digidrums[i].SampleData)
 		y.pDrumTab[i].SampleSize = v.Digidrums[i].SampleSize
+		y.pDrumTab[i].RepLen = v.Digidrums[i].RepLen
 	}
+	y.nbVoice = int(v.NbVoice)
 	switch v.FileID {
 	case ym.YM2:
 		y.SongType = YM_V2
@@ -184,12 +187,17 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 		y.SongType = YM_V5
 	case ym.YM6:
 		y.SongType = YM_V6
-	case ym.YMT1:
+	case ym.YM_MIX1:
 		y.SongType = YM_MIX1
-	//	y.trackerInit(100)
+
+	case ym.YMT1:
+		y.SongType = YM_TRACKER1
+		y.trackerInit(100)
 	case ym.YMT2:
-		y.SongType = YM_MIX2
-		//	y.trackerInit(100)
+		y.SongType = YM_TRACKER2
+		y.trackerInit(100)
+	default:
+		y.SongType = YM_V6
 	}
 
 	for i := 0; i < 16; i++ {
@@ -357,7 +365,7 @@ func (y *YMMusic) MusicCompute(buffer *[]int16, nbSample int) bool {
 		y.stDigitMix(buffer, int32(nbSample))
 	} else {
 		if y.SongType >= YM_TRACKER1 && y.SongType < YM_TRACKERMAX {
-			//to implement	y.TrackerUpdate(buffer, int32(nbSample))
+			y.TrackerUpdate(buffer, int32(nbSample))
 		} else {
 
 			for {
@@ -386,36 +394,60 @@ func (y *YMMusic) MusicCompute(buffer *[]int16, nbSample int) bool {
 	return true
 }
 
-/*
-func (y *YMMusic) ymTrackerPlayer(pVoice []ymTrackerVoice) {
+func (y *YMMusic) getTrackerLine() *ymTrackerLine {
+	tl := &ymTrackerLine{}
 
-	pLine := &ymTrackerLine{}
-	pDataStream[y.currentFrame][y.nbVoice]
-	binary.Read(y.pDataStreamReader, binary.BigEndian, pline)
-	//	pLine = (ymTrackerLine_t*)pDataStream;
-	pLine += (y.currentFrame * y.nbVoice)
+	if pLineRegister >= 16 {
+		pLineRegister = 0
+	}
+	tl.noteOn = y.pDataStream[pLineRegister][pLineFrame]
+	pLineRegister++
+	if pLineRegister >= 16 {
+		pLineRegister = 0
+	}
+	tl.volume = y.pDataStream[pLineRegister][pLineFrame]
+	pLineRegister++
+	if pLineRegister >= 16 {
+		pLineRegister = 0
+	}
+	tl.freqHigh = y.pDataStream[pLineRegister][pLineFrame]
+	pLineRegister++
+	if pLineRegister >= 16 {
+		pLineRegister = 0
+	}
+	tl.freqLow = y.pDataStream[pLineRegister][pLineFrame]
+	pLineRegister++
+	return tl
+}
+
+var pLineRegister int
+var pLineFrame int
+
+func (y *YMMusic) ymTrackerPlayer(pVoice *[]ymTrackerVoice) {
+	pLineFrame = y.currentFrame
+	pLine := y.getTrackerLine()
 	for i := 0; i < y.nbVoice; i++ {
+		//	fmt.Printf("pline:%v\n", pLine)
 		var n int32
-		pVoice[i].sampleFreq = (uint32(pLine.freqHigh) << 8) | uint32(pLine.freqLow)
-		if pVoice[i].sampleFreq != 0 {
-			pVoice[i].sampleVolume = int32(pLine.volume) & 63
-			pVoice[i].bLoop = false
-			if (pLine.volume & 0x40) != 0 {
-				pVoice[i].bLoop = true
-			}
+		(*pVoice)[i].sampleFreq = (uint32(pLine.freqHigh) << 8) | uint32(pLine.freqLow)
+		if (*pVoice)[i].sampleFreq != 0 {
+			(*pVoice)[i].sampleVolume = int32(pLine.volume) & 63
+			(*pVoice)[i].bLoop = int(pLine.volume & 0x40)
 			n = int32(pLine.noteOn)
 			if n != 0xff { // Note ON.
 
-				pVoice[i].bRunning = true
-				copy(pVoice[i].pSample, y.pDrumTab[n].SampleData)
-				pVoice[i].sampleSize = y.pDrumTab[n].SampleSize
-				//pVoice[i].repLen = y.pDrumTab[n].
-				pVoice[i].samplePos = 0
+				(*pVoice)[i].bRunning = true
+				(*pVoice)[i].pSample = make([]byte, len(y.pDrumTab[n].SampleData))
+				copy((*pVoice)[i].pSample, y.pDrumTab[n].SampleData)
+				(*pVoice)[i].sampleSize = y.pDrumTab[n].SampleSize
+				(*pVoice)[i].repLen = y.pDrumTab[n].RepLen
+				(*pVoice)[i].samplePos = 0
 			}
 		} else {
-			pVoice[i].bRunning = false
+			(*pVoice)[i].bRunning = false
 		}
-		pLine++
+
+		pLine = y.getTrackerLine()
 	}
 
 	y.currentFrame++
@@ -425,12 +457,10 @@ func (y *YMMusic) ymTrackerPlayer(pVoice []ymTrackerVoice) {
 		}
 		y.currentFrame = 0
 	}
-}*/
+}
 
-/*
-func (y *YMMusic) ymTrackerVoiceAdd(pVoice *ymTrackerVoice, pBuffer *[]byte, nbs int32) {
-	var pVolumeTab *ymsample
-	var pSample []byte
+func (y *YMMusic) ymTrackerVoiceAdd(pVoice *ymTrackerVoice, pBuffer *[]int16, pBufferIndex int, nbs int32) {
+	var pVolumeTab int16
 	var samplePos uint32
 	var sampleEnd uint32
 	var sampleInc uint32
@@ -441,8 +471,7 @@ func (y *YMMusic) ymTrackerVoiceAdd(pVoice *ymTrackerVoice, pBuffer *[]byte, nbs
 		return
 	}
 
-	pVolumeTab = &y.ymTrackerVolumeTable[256*(pVoice.sampleVolume&63)]
-	pSample = pVoice.pSample
+	pVolumeTab = int16(256 * (pVoice.sampleVolume & 63))
 	samplePos = pVoice.samplePos
 
 	step = float64(pVoice.sampleFreq << YMTPREC)
@@ -454,20 +483,22 @@ func (y *YMMusic) ymTrackerVoiceAdd(pVoice *ymTrackerVoice, pBuffer *[]byte, nbs
 	repLen = (pVoice.repLen << YMTPREC)
 	if nbs > 0 {
 		for {
-			var va int32 = pVolumeTab[pSample[samplePos>>YMTPREC]]
+			var va int32 = int32(y.ymTrackerVolumeTable[pVolumeTab+int16(pVoice.pSample[samplePos>>YMTPREC])])
 
 			var vb int32 = va
 			if samplePos < (sampleEnd - (1 << YMTPREC)) {
-				vb = pVolumeTab[pSample[(samplePos>>YMTPREC)+1]]
+				vb = int32(y.ymTrackerVolumeTable[pVolumeTab+int16(pVoice.pSample[(samplePos>>YMTPREC)+1])])
 			}
 			var frac int32 = int32(samplePos) & ((1 << YMTPREC) - 1)
 			va += (((vb - va) * frac) >> YMTPREC)
 
-			//(*pBuffer++) += va;
+			//	fmt.Printf("va:%d\n", va)
+			(*pBuffer)[pBufferIndex] += int16(va)
+			pBufferIndex++
 
 			samplePos += sampleInc
 			if samplePos >= sampleEnd {
-				if pVoice.bLoop {
+				if pVoice.bLoop > 0 {
 					samplePos -= repLen
 				} else {
 					pVoice.bRunning = false
@@ -483,10 +514,11 @@ func (y *YMMusic) ymTrackerVoiceAdd(pVoice *ymTrackerVoice, pBuffer *[]byte, nbs
 	}
 	pVoice.samplePos = samplePos
 }
-*/
-/*
+
 func (y *YMMusic) TrackerUpdate(pBuffer *[]int16, nbSample int32) {
 	var nbs int32
+	var pBufferIndex int
+
 	for i := 0; i < int(nbSample); i++ {
 		(*pBuffer)[i] = 0
 	}
@@ -496,7 +528,7 @@ func (y *YMMusic) TrackerUpdate(pBuffer *[]int16, nbSample int32) {
 	for {
 		if y.ymTrackerNbSampleBefore == 0 {
 			// Lit la partition ymTracker
-			y.ymTrackerPlayer(y.ymTrackerVoice)
+			y.ymTrackerPlayer(&y.ymTrackerVoice)
 			if y.bMusicOver {
 				return
 			}
@@ -510,9 +542,10 @@ func (y *YMMusic) TrackerUpdate(pBuffer *[]int16, nbSample int32) {
 		if nbs > 0 {
 			// Genere les samples.
 			for i := 0; i < y.nbVoice; i++ {
-				y.ymTrackerVoiceAdd(&y.ymTrackerVoice[i], pBuffer, nbs)
+				//fmt.Printf("nbs:%d,i:%d\n", nbs, i)
+				y.ymTrackerVoiceAdd(&y.ymTrackerVoice[i], pBuffer, pBufferIndex, nbs)
 			}
-			pBuffer += nbs
+			pBufferIndex += int(nbs)
 			nbSample -= nbs
 		}
 		if nbSample <= 0 {
@@ -520,7 +553,6 @@ func (y *YMMusic) TrackerUpdate(pBuffer *[]int16, nbSample int32) {
 		}
 	}
 }
-*/
 
 func (y *YMMusic) stDigitMix(pWrite16 *[]int16, nbs int32) {
 	if y.bMusicOver {
@@ -631,7 +663,6 @@ func (y *YMMusic) player() {
 			var sampleFrq uint32
 			y.ymChip.writeRegister(7, y.ymChip.readRegister(7)|0x24) // Coupe TONE + NOISE canal C.
 			sampleNum = int32(y.pDataStream[10][ptr] & 0x7f)         // Numero du sample
-
 			if y.pDataStream[12][ptr] != 0 {
 				sampleFrq = uint32(MFP_CLOCK / int(y.pDataStream[12][ptr]))
 				y.ymChip.drumStart(2, // Voice C
