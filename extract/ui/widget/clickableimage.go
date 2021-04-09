@@ -85,5 +85,4 @@ func (ci *clickableImageRenderer) Refresh() {
 
 func (ci *clickableImageRenderer) Layout(size fyne.Size) {
 	ci.image.Resize(size)
-
 }

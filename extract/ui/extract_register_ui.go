@@ -48,8 +48,8 @@ type ui struct {
 	frameEndSelectedIndex   int
 	rowSelectionLayout      *container.Scroll
 
-	table *widget.Table
-	//graphicContent    *container.Scroll
+	table             *widget.Table
+	graphicContent    *container.Scroll
 	tableContainer    *container.Scroll
 	graphic           *w2.ClickableImage
 	registersSelected [16]bool
@@ -70,13 +70,29 @@ type ui struct {
 	playerIsPlaying   bool
 }
 
-/*
 func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
+	switch ev.Name {
+	case "S":
+		u.stop()
+	case "P":
+		u.play()
+	case "O":
+		u.OpenFileAction()
+	case "E":
+		u.SaveFileAction()
+	default:
+		fmt.Printf("name:%s\n", ev.Name)
+
+	}
 }
 
 func (u *ui) onTypedRune(r rune) {
+	switch r {
+	default:
+		fmt.Printf("name:%v\n", r)
+
+	}
 }
-*/
 
 func (u *ui) Tapped(
 	x float32, y float32) {
@@ -343,9 +359,8 @@ func (u *ui) play() {
 	if u.playerIsPlaying {
 		return
 	}
-	u.playerTimeTicker = time.NewTicker(time.Millisecond * 10)
-	u.playerTimeValue = 0
-	u.playerIsPlaying = true
+	u.playerTime.SetText("Decoding file.")
+
 	var y *ym.Ym
 	var err error
 	u.frameEndSelectedIndex, err = strconv.Atoi(u.rowEndSelected.Text)
@@ -362,6 +377,14 @@ func (u *ui) play() {
 	if u.frameStartSelectedIndex < 0 || u.frameStartSelectedIndex > int(u.ym.NbFrames) {
 		u.frameStartSelectedIndex = 0
 	}
+	if u.frameEndSelectedIndex-u.frameStartSelectedIndex <= 0 {
+		// no ym loaded.
+		u.playerIsPlaying = false
+		return
+	}
+	u.playerTimeTicker = time.NewTicker(time.Millisecond * 10)
+	u.playerTimeValue = 0
+	u.playerIsPlaying = true
 	y = u.ym.Extract(u.frameStartSelectedIndex, u.frameEndSelectedIndex)
 
 	go func() {
@@ -387,7 +410,7 @@ func (u *ui) play() {
 			return
 		}
 		r := bytes.NewReader(content)
-
+		u.playerTimeValue = 0
 		streamer, format, err := wav2.Decode(r)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error while streaming wave with error :%v\n", err.Error())
@@ -421,7 +444,10 @@ func (u *ui) stop() {
 	if u.playerIsPlaying {
 		u.speakerDone <- true
 	}
-	u.playerTimeChan <- true
+
+	if u.playerTimeValue != 0 {
+		u.playerTimeChan <- true
+	}
 	u.playerIsPlaying = false
 
 }
@@ -549,9 +575,7 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	u.graphic = w2.NewClickableImage(u.Tapped, nil)
 	u.generateChart()
-	//	u.graphicContent = container.NewHScroll(
-	//		u.graphic)
-
+	u.graphicContent = container.NewHScroll(u.graphic)
 	u.window = app.NewWindow("YeTi")
 	u.window.SetContent(
 		container.New(
@@ -579,8 +603,8 @@ func (u *ui) LoadUI(app fyne.App) {
 
 				container.New(
 					layout.NewGridLayout(1),
-					//u.graphicContent,
-					u.graphic,
+					u.graphicContent,
+					//u.graphic,
 				),
 				container.New(
 					layout.NewGridLayoutWithRows(1),
@@ -592,8 +616,8 @@ func (u *ui) LoadUI(app fyne.App) {
 				u.tableContainer,
 			),
 		))
-	//	u.window.Canvas().SetOnTypedRune(u.onTypedRune)
-	//	u.window.Canvas().SetOnTypedKey(u.onTypedKey)
+	u.window.Canvas().SetOnTypedRune(u.onTypedRune)
+	u.window.Canvas().SetOnTypedKey(u.onTypedKey)
 	u.window.Resize(fyne.NewSize(400, 1000))
 	u.window.SetTitle("YeTi @ " + Appversion)
 	u.window.Show()
