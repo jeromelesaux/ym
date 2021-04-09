@@ -17,14 +17,15 @@ var (
 )
 
 const (
-	AMSTRAD_CLOCK  = 1000000
-	ATARI_CLOCK    = 2000000
-	SPECTRUM_CLOCK = 1773400
-	MFP_CLOCK      = 2457600
-	NOISESIZE      = 16384
-	DRUM_PREC      = 15
-	A_DRUMSIGNED   = 2
-	A_TIMECONTROL  = 8
+	AMSTRAD_CLOCK       = 1000000
+	ATARI_CLOCK         = 2000000
+	SPECTRUM_CLOCK      = 1773400
+	MFP_CLOCK           = 2457600
+	NOISESIZE           = 16384
+	DRUM_PREC           = 15
+	A_DRUMSIGNED        = 2
+	A_TIMECONTROL       = 8
+	A_STREAMINTERLEAVED = 1
 )
 
 func Unmarshall(data []byte, y *ym.Ym) error {
@@ -196,6 +197,7 @@ func umarshallYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.SongAttributes); err != nil {
 		return err
 	}
+	y.SongAttributes |= A_TIMECONTROL
 	if err := binary.Read(r, binary.BigEndian, &y.DigidrumNb); err != nil {
 		return err
 	}
@@ -274,13 +276,25 @@ func umarshallYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	for i := 0; i < 16; i++ {
 		y.Data[i] = make([]byte, y.NbFrames+1)
 	}
+	if y.SongAttributes&A_STREAMINTERLEAVED != 0 {
 
-	for j := 0; j < 16; j++ {
+		for j := 0; j < 16; j++ {
+			for i := 0; i < int(y.NbFrames); i++ {
+				v, err := r.ReadByte()
+				y.Data[j][i] = v // writeRegister(v, j)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	} else {
 		for i := 0; i < int(y.NbFrames); i++ {
-			v, err := r.ReadByte()
-			y.Data[j][i] = v // writeRegister(v, j)
-			if err != nil {
-				return err
+			for j := 0; j < 16; j++ {
+				v, err := r.ReadByte()
+				y.Data[j][i] = v // writeRegister(v, j)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}
