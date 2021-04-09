@@ -23,6 +23,8 @@ const (
 	MFP_CLOCK      = 2457600
 	NOISESIZE      = 16384
 	DRUM_PREC      = 15
+	A_DRUMSIGNED   = 2
+	A_TIMECONTROL  = 8
 )
 
 func Unmarshall(data []byte, y *ym.Ym) error {
@@ -30,7 +32,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.FileID); err != nil {
 		return err
 	}
-	if y.FileID <= ym.YM4 {
+	if y.FileID <= ym.YM4 && y.FileID != ym.YM_MIX1 {
 		return umarshallLegacyYm(r, data, y)
 	}
 
@@ -45,8 +47,14 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 			return err
 		}
 	} else {
-		if err := umarshallYm(r, data, y); err != nil {
-			return err
+		if y.FileID == ym.YM_MIX1 {
+			if err := umarshallYmMix(r, data, y); err != nil {
+				return err
+			}
+		} else {
+			if err := umarshallYm(r, data, y); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -406,5 +414,106 @@ func umarshallLegacyYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 			}
 		}
 	}
+	return nil
+}
+
+func umarshallYmMix(r *bytes.Reader, data []byte, y *ym.Ym) error {
+	if err := binary.Read(r, binary.BigEndian, &y.SongAttributes); err != nil {
+		return err
+	}
+	if y.SongAttributes&1 != 0 {
+		y.SongAttributes = A_DRUMSIGNED
+	}
+	var sampleSize uint32
+	if err := binary.Read(r, binary.BigEndian, &sampleSize); err != nil {
+		return err
+	}
+	y.NbFrames = uint32(sampleSize)
+	if err := binary.Read(r, binary.BigEndian, &y.NbMixBlock); err != nil {
+		return err
+	}
+
+	y.MixBlock = make([]ym.MixBlock, 0)
+	for i := 0; i < int(y.NbMixBlock); i++ {
+		m := ym.MixBlock{}
+		if err := binary.Read(r, binary.BigEndian, &m.SampleStart); err != nil {
+			return err
+		}
+		if err := binary.Read(r, binary.BigEndian, &m.SampleLength); err != nil {
+			return err
+		}
+		if err := binary.Read(r, binary.BigEndian, &m.NbRepeat); err != nil {
+			return err
+		}
+		if err := binary.Read(r, binary.BigEndian, &m.ReplayFreq); err != nil {
+			return err
+		}
+		y.MixBlock = append(y.MixBlock, m)
+	}
+	songName := []byte{}
+	for {
+		b, err := r.ReadByte()
+		if err != nil {
+			return err
+		}
+		songName = append(songName, b)
+		if b == 0 {
+			y.SongName = make([]byte, len(songName))
+			copy(y.SongName, songName)
+			break
+		}
+	}
+	authorName := []byte{}
+	for {
+		b, err := r.ReadByte()
+		if err != nil {
+			return err
+		}
+		authorName = append(authorName, b)
+		if b == 0 {
+			y.AuthorName = make([]byte, len(authorName))
+			copy(y.AuthorName, authorName)
+			break
+		}
+	}
+	songComment := []byte{}
+	for {
+		b, err := r.ReadByte()
+		if err != nil {
+			return err
+		}
+		songComment = append(songComment, b)
+		if b == 0 {
+			y.SongComment = make([]byte, len(songComment))
+			copy(y.SongComment, songComment)
+			break
+		}
+	}
+
+	for i := 0; i < 16; i++ {
+		y.Data[i] = make([]byte, y.NbFrames)
+	}
+
+	for j := 0; j < 16; j++ {
+		for i := 0; i < int(y.NbFrames); i++ {
+			v, err := r.ReadByte()
+			y.Data[j][i] = v // writeRegister(v, j)
+			if err != nil {
+				y.SongAttributes |= A_TIMECONTROL
+				y.ComputeTime()
+				return err
+			}
+		}
+	}
+	if y.SongAttributes&A_DRUMSIGNED != 0 {
+		for j := 0; j < 16; j++ {
+			for i := 0; i < int(y.NbFrames); i++ {
+				y.Data[j][i] ^= 0x80
+			}
+		}
+		y.SongAttributes = A_DRUMSIGNED
+	}
+	y.SongAttributes |= A_TIMECONTROL
+	y.ComputeTime()
 	return nil
 }

@@ -25,19 +25,6 @@ type YmSpecialEffect struct {
 	sidVol  int32
 }
 
-type MixBlock struct {
-	SampleStart  uint32
-	SampleLength uint32
-	NbRepeat     uint16
-	ReplayFreq   uint16
-}
-
-type TimeKey struct {
-	time    uint32
-	nRepeat uint16
-	nBlock  uint16
-}
-
 type ymTrackerVoice struct {
 	pSample      []byte
 	sampleSize   uint32
@@ -70,7 +57,7 @@ type YMMusic struct {
 	replayRate       int
 	playerRate       int
 	pBigSampleBuffer []byte
-	pMixBlock        []MixBlock
+	pMixBlock        []ym.MixBlock
 	innerSamplePos   int
 	currentPos       uint32
 	nbDrum           int
@@ -79,19 +66,20 @@ type YMMusic struct {
 	currentFrame     int
 	loopFrame        int
 	bMusicOver       bool
+	nbTimeKey        int32
 	//streamInc        int
 
 	pDataStream [][]byte // structure deinterleave frame by frame
 	bMusicOk    bool
 	bPause      bool
 	//nbTimerKey              int32
-	pTimeInfo               *TimeKey
+	pTimeInfo               []ym.TimeKey
 	musicLenInMs            uint32
 	iMusicPosAccurateSample uint32
 	iMusicPosInMs           uint32
 	mixPos                  int32
 	nbRepeat                int32
-	pCurrentMixSample       []byte
+	pCurrentMixSample       int
 	currentSampleLength     uint32
 	currentPente            uint32
 	nbMixBlock              int32
@@ -127,12 +115,12 @@ func NewYMMusic() *YMMusic {
 		SongPlayer:           make([]byte, 0),
 		pBigSampleBuffer:     make([]byte, 0),
 		pDataStream:          make([][]byte, 16),
-		pMixBlock:            make([]MixBlock, 0),
+		pMixBlock:            make([]ym.MixBlock, 0),
 		pDrumTab:             make([]ym.Digidrum, 0),
 		ymTrackerVolumeTable: make([]int16, 256*64),
 		playerRate:           50,
 		replayRate:           44100,
-		pTimeInfo:            &TimeKey{},
+		pTimeInfo:            make([]ym.TimeKey, 0),
 		ymTrackerVoice:       make([]ymTrackerVoice, MAX_VOICE),
 		ymChip:               NewCYm2149Ex(encoding.ATARI_CLOCK, 1, 44100),
 	}
@@ -175,6 +163,24 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 		y.pDrumTab[i].SampleSize = v.Digidrums[i].SampleSize
 		y.pDrumTab[i].RepLen = v.Digidrums[i].RepLen
 	}
+
+	y.nbMixBlock = int32(v.NbMixBlock)
+	y.pMixBlock = make([]ym.MixBlock, y.nbMixBlock)
+	for i := 0; i < int(y.nbMixBlock); i++ {
+		y.pMixBlock[i].NbRepeat = v.MixBlock[i].NbRepeat
+		y.pMixBlock[i].ReplayFreq = v.MixBlock[i].ReplayFreq
+		y.pMixBlock[i].SampleLength = v.MixBlock[i].SampleLength
+		y.pMixBlock[i].SampleStart = v.MixBlock[i].SampleStart
+	}
+
+	y.nbTimeKey = v.NbTimeKey
+	y.pTimeInfo = make([]ym.TimeKey, y.nbTimeKey)
+	for i := 0; i < int(y.nbTimeKey); i++ {
+		y.pTimeInfo[i].Time = v.TimeInfo[i].Time
+		y.pTimeInfo[i].NRepeat = v.TimeInfo[i].NRepeat
+		y.pTimeInfo[i].NBlock = v.TimeInfo[i].NBlock
+	}
+
 	y.nbVoice = int(v.NbVoice)
 	switch v.FileID {
 	case ym.YM2:
@@ -207,12 +213,23 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 		}
 	}
 
+	if y.SongType == YM_MIX1 {
+		y.pBigSampleBuffer = make([]byte, 16*y.nbFrame)
+		var index int
+		for i := 0; i < 16; i++ {
+			for j := 0; j < y.nbFrame; j++ {
+				y.pBigSampleBuffer[index] = y.pDataStream[i][j]
+				index++
+			}
+		}
+	}
+
 	y.ymChip.reset()
 	y.MusicTimeInMs = getMusicTime(v)
 	y.MusicTimeInSec = getMusicTime(v) / 1000
 	y.bMusicOk = true
 	y.bPause = false
-
+	y.mixPos = -1
 	return nil
 }
 
@@ -552,7 +569,8 @@ func (y *YMMusic) TrackerUpdate(pBuffer *[]int16, nbSample int32) {
 	}
 }
 
-func (y *YMMusic) stDigitMix(pWrite16 *[]int16, nbs int32) {
+func (y *YMMusic) stDigitMix(pBuffer *[]int16, nbs int32) {
+	var pBufferIndex int
 	if y.bMusicOver {
 		return
 	}
@@ -568,16 +586,15 @@ func (y *YMMusic) stDigitMix(pWrite16 *[]int16, nbs int32) {
 
 	if nbs != 0 {
 		for {
-
-			var sa int32 = int32(y.pCurrentMixSample[y.currentPos>>12]) << 8
+			var sa int32 = int32(int16(y.pBigSampleBuffer[y.pCurrentMixSample+int(y.currentPos>>12)]) << 8)
 			var sb int32 = sa
 			if (y.currentPos >> 12) < ((y.currentSampleLength >> 12) - 1) {
-				sb = int32(y.pCurrentMixSample[(y.currentPos>>12)+1]) << 8
+				sb = int32(int16(y.pBigSampleBuffer[y.pCurrentMixSample+int(y.currentPos>>12)+1]) << 8)
 			}
 			var frac int32 = int32(y.currentPos) & ((1 << 12) - 1)
 			sa += (((sb - sa) * frac) >> 12)
-			*pWrite16 = append(*pWrite16, int16(sa))
-			//*pWrite16++ = sa;
+			(*pBuffer)[pBufferIndex] = int16(sa)
+			pBufferIndex++
 
 			y.currentPos += y.currentPente
 			if y.currentPos >= y.currentSampleLength {
@@ -609,7 +626,7 @@ func (y *YMMusic) readNextBlockInfo() {
 		}
 		y.nbRepeat = int32(y.pMixBlock[y.mixPos].NbRepeat)
 	}
-	copy(y.pCurrentMixSample, y.pBigSampleBuffer[y.pMixBlock[y.mixPos].SampleStart:])
+	y.pCurrentMixSample = int(y.pMixBlock[y.mixPos].SampleStart)
 	y.currentSampleLength = (y.pMixBlock[y.mixPos].SampleLength) << 12
 	y.currentPente = (uint32(y.pMixBlock[y.mixPos].ReplayFreq) << 12) / uint32(y.replayRate)
 	y.currentPos &= ((1 << 12) - 1)
