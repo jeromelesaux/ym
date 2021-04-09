@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	Appversion               = "with sound preview"
+	Appversion               = "all ym format supported"
 	dialogSize               = fyne.NewSize(1000, 800)
 	graphicFileTemporaryFile = "yeti-gfx-cache.png"
 )
