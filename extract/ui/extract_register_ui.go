@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	Appversion               = "all ym format supported"
+	Appversion               = "all ym format supported, ui bug fixed"
 	dialogSize               = fyne.NewSize(1000, 800)
 	graphicFileTemporaryFile = "yeti-gfx-cache.png"
 )
@@ -397,6 +397,8 @@ func (u *ui) play() {
 		u.playerIsPlaying = false
 		return
 	}
+
+	u.playerTimeChan = make(chan bool)
 	u.playerTimeTicker = time.NewTicker(time.Millisecond * 10)
 	u.playerTimeValue = 0
 	u.playerIsPlaying = true
@@ -406,6 +408,7 @@ func (u *ui) play() {
 		for {
 			select {
 			case <-u.playerTimeChan:
+				u.playerIsPlaying = false
 				u.playerTime.SetText("Player stopped.")
 				return
 			case <-u.playerTimeTicker.C:
@@ -416,7 +419,7 @@ func (u *ui) play() {
 		}
 	}()
 	go func() {
-
+		u.speakerDone = make(chan bool)
 		v := wav.NewYMMusic()
 		v.LoadMemory(y)
 		content, err := v.Wave()
@@ -434,7 +437,8 @@ func (u *ui) play() {
 		defer streamer.Close()
 
 		speaker.Play(beep.Seq(streamer, beep.Callback(func() {
-			u.playerTimeChan <- true
+			u.speakerDone <- true
+			//	u.playerTimeChan <- true
 			fmt.Printf("Googbye go routine\n")
 		})))
 		fmt.Printf("Speaker play the new file %v\n", format)
@@ -445,7 +449,7 @@ func (u *ui) play() {
 
 				streamer.Close()
 				speaker.Clear()
-				//speaker.Close()
+				u.playerTimeChan <- true
 				fmt.Printf("Now the speaker is cleared\n")
 				return
 			}
@@ -458,12 +462,8 @@ func (u *ui) play() {
 func (u *ui) stop() {
 	if u.playerIsPlaying {
 		u.speakerDone <- true
-	}
-
-	if u.playerTimeValue != 0 {
 		u.playerTimeChan <- true
 	}
-	u.playerIsPlaying = false
 
 }
 
@@ -473,8 +473,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.ymBackuped = ym.NewYm()
 	u.ymToSave = ym.NewYm()
 	u.archiveFilename = "archive.ym"
-	u.speakerDone = make(chan bool)
-	u.playerTimeChan = make(chan bool)
+
 	format := beep.Format{SampleRate: 44100}
 	err := speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 	if err != nil {
@@ -764,6 +763,7 @@ func (u *ui) setFileDescription() {
 	desc := fmt.Sprintf("File song's Author :%+q\n", string(u.ym.AuthorName))
 	desc += fmt.Sprintf("File song's Name :%+q\n", string(u.ym.SongName))
 	desc += fmt.Sprintf("File song's comment :%+q\n", string(u.ym.SongComment))
+	desc += fmt.Sprintf("Duration %.2f seconds\n", float64(u.ym.NbFrames)/float64(u.ym.FrameHz))
 	desc += fmt.Sprintf("Frame rate %d hz", u.ym.FrameHz) + "\n"
 	desc += fmt.Sprintf("Number of frame %d ", u.ym.NbFrames) + "\n"
 	desc += fmt.Sprintf("Frame loop at %d", u.ym.LoopFrame) + "\n"
