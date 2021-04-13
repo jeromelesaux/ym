@@ -7,7 +7,7 @@ import (
 )
 
 type ClickableImage struct {
-	w2.BaseWidget
+	*w2.Icon
 	image         *canvas.Image
 	toCallButton0 func(float32, float32)
 	toCallButton1 func(float32, float32)
@@ -15,22 +15,22 @@ type ClickableImage struct {
 
 func NewClickableImage(f0 func(float32, float32), f1 func(float32, float32)) *ClickableImage {
 	c := &ClickableImage{
-		BaseWidget:    w2.BaseWidget{},
+		Icon:          &w2.Icon{},
 		toCallButton0: f0,
 		toCallButton1: f1,
 	}
-
-	c.BaseWidget.ExtendBaseWidget(c)
+	c.ExtendBaseWidget(c)
+	//	c.BaseWidget.ExtendBaseWidget(c)
 	return c
 }
 
 func (ci *ClickableImage) Tapped(
 	pe *fyne.PointEvent) {
-	/*fmt.Printf("point X:%f,Y:%f and absolute position X:%f,Y:%f\n",
-	pe.Position.X,
-	pe.Position.Y,
-	pe.AbsolutePosition.X,
-	pe.AbsolutePosition.Y)*/
+	/*	fmt.Printf("point X:%f,Y:%f and absolute position X:%f,Y:%f\n",
+		pe.Position.X,
+		pe.Position.Y,
+		pe.AbsolutePosition.X,
+		pe.AbsolutePosition.Y)*/
 	if ci.toCallButton0 != nil {
 		(ci.toCallButton0)(pe.Position.X, pe.Position.Y)
 	}
@@ -50,16 +50,21 @@ func (ci *ClickableImage) SetImage(i *canvas.Image) {
 
 	ci.image.SetMinSize(
 		fyne.NewSize(float32(width), float32(height)))
-	ci.BaseWidget.ExtendBaseWidget(ci)
+	ci.ExtendBaseWidget(ci)
 	ci.Refresh()
+	//ci.BaseWidget.Refresh()
 }
 
 func (ci *ClickableImage) CreateRenderer() fyne.WidgetRenderer {
-	ci.BaseWidget.ExtendBaseWidget(ci)
+	//ci.BaseWidget.ExtendBaseWidget(ci)
 	return &clickableImageRenderer{
 		image: ci.image,
 		objs:  []fyne.CanvasObject{ci.image},
 	}
+}
+
+func (ci *ClickableImage) Move(position fyne.Position) {
+	ci.Icon.Move(position)
 }
 
 type clickableImageRenderer struct {
@@ -68,7 +73,7 @@ type clickableImageRenderer struct {
 }
 
 func (ci *clickableImageRenderer) Destroy() {
-
+	ci.image = nil
 }
 
 func (ci *clickableImageRenderer) MinSize() fyne.Size {
@@ -80,9 +85,15 @@ func (ci *clickableImageRenderer) Objects() []fyne.CanvasObject {
 }
 
 func (ci *clickableImageRenderer) Refresh() {
-	canvas.Refresh(ci.image)
+	ci.image.Refresh()
 }
 
 func (ci *clickableImageRenderer) Layout(size fyne.Size) {
+	//	fmt.Printf("new size layout:%f,%f\n", size.Width, size.Height)
+	ci.image.Resize(size)
+}
+
+func (ci *clickableImageRenderer) Resize(size fyne.Size) {
+	//	fmt.Printf("new size resize :%f,%f\n", size.Width, size.Height)
 	ci.image.Resize(size)
 }

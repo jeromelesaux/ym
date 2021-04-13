@@ -49,7 +49,7 @@ type ui struct {
 	rowSelectionLayout      *container.Scroll
 
 	table             *widget.Table
-	graphicContent    *container.Scroll
+	graphicContent    *fyne.Container
 	tableContainer    *container.Scroll
 	graphic           *w2.ClickableImage
 	registersSelected [16]bool
@@ -174,7 +174,16 @@ func (u *ui) generateChart() {
 
 	png.Encode(fw, img)
 	fw.Close()
+	/*	var s fyne.Size
+		if u.window != nil {
+			s = u.window.Content().Size()
+		}*/
+	//u.graphicContent.SetMinSize(fyne.Size{Width: 1200., Height: 180.})
+	//i.FillMode = canvas.ImageFillStretch
 	u.graphic.SetImage(canvas.NewImageFromFile(graphicFileTemporaryFile))
+	/*if u.window != nil {
+		u.window.Content().Resize(s)
+	}*/
 	//u.graphic.Resize(fyne.Size{Width: 800, Height: 200})
 	//	u.graphicContent.Resize(fyne.Size{Width: 800, Height: 200})
 	//fmt.Printf("Graphic size %f, %f\n", u.graphic.Size().Height, u.graphic.MinSize().Width)
@@ -581,7 +590,9 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	u.graphic = w2.NewClickableImage(u.Tapped, nil)
 	u.generateChart()
-	u.graphicContent = container.NewHScroll(u.graphic)
+	u.graphicContent = container.New(layout.NewMaxLayout(), u.graphic)
+	//u.graphicContent = container.NewContainerWithLayout(layout.NewMaxLayout())
+
 	u.window = app.NewWindow("YeTi")
 	u.window.SetContent(
 		container.New(
@@ -592,8 +603,8 @@ func (u *ui) LoadUI(app fyne.App) {
 					layout.NewGridLayoutWithColumns(2),
 					container.NewVScroll(
 						container.New(
-							layout.NewGridLayoutWithColumns(2),
-							u.fileDescription,
+							layout.NewGridLayoutWithColumns(1),
+							container.NewVScroll(u.fileDescription),
 						)),
 					container.New(
 						layout.NewGridLayoutWithRows(3),
@@ -606,12 +617,7 @@ func (u *ui) LoadUI(app fyne.App) {
 							stopButton,
 						)),
 				),
-
-				container.New(
-					layout.NewGridLayout(1),
-					u.graphicContent,
-					//u.graphic,
-				),
+				u.graphicContent,
 				container.New(
 					layout.NewGridLayoutWithRows(1),
 					selectionLayout,
@@ -676,6 +682,7 @@ func (u *ui) DisplayChange() {
 	u.prepareExport()
 	u.ym = u.ymToSave
 	u.setFileDescription()
+
 	u.generateChart()
 	//	u.graphicContent.Refresh()
 	wait.Hide()
@@ -754,9 +761,9 @@ func (u *ui) OpenFileAction() {
 }
 
 func (u *ui) setFileDescription() {
-	desc := "File song's Author :" + string(u.ym.AuthorName) + "\n"
-	desc += "File song's Name :" + string(u.ym.SongName) + "\n"
-	desc += "File song's comment :" + string(u.ym.SongComment) + "\n"
+	desc := fmt.Sprintf("File song's Author :%+q\n", string(u.ym.AuthorName))
+	desc += fmt.Sprintf("File song's Name :%+q\n", string(u.ym.SongName))
+	desc += fmt.Sprintf("File song's comment :%+q\n", string(u.ym.SongComment))
 	desc += fmt.Sprintf("Frame rate %d hz", u.ym.FrameHz) + "\n"
 	desc += fmt.Sprintf("Number of frame %d ", u.ym.NbFrames) + "\n"
 	desc += fmt.Sprintf("Frame loop at %d", u.ym.LoopFrame) + "\n"
