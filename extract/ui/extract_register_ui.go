@@ -80,6 +80,12 @@ func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
 		u.OpenFileAction()
 	case "E":
 		u.SaveFileAction()
+	case "R":
+		u.ResetUI()
+	case "D":
+		u.DisplayChange()
+	case "C":
+		u.CancelChange()
 	default:
 		fmt.Printf("name:%s\n", ev.Name)
 
