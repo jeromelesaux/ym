@@ -33,7 +33,7 @@ import (
 )
 
 var (
-	Appversion               = "all ym format supported, ui bug fixed"
+	Appversion               = "with music progress bar"
 	dialogSize               = fyne.NewSize(1000, 800)
 	graphicFileTemporaryFile = "yeti-gfx-cache.png"
 )
@@ -68,6 +68,7 @@ type ui struct {
 	playerTimeChan    chan bool
 	playerTimeValue   float64
 	playerIsPlaying   bool
+	playerProgression *widget.ProgressBar
 }
 
 func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
@@ -403,18 +404,20 @@ func (u *ui) play() {
 	u.playerTimeValue = 0
 	u.playerIsPlaying = true
 	y = u.ym.Extract(u.frameStartSelectedIndex, u.frameEndSelectedIndex)
-
+	totalTime := float64(y.NbFrames) / float64(y.FrameHz)
 	go func() {
 		for {
 			select {
 			case <-u.playerTimeChan:
 				u.playerIsPlaying = false
+				u.playerProgression.SetValue(0)
 				u.playerTime.SetText("Player stopped.")
 				return
 			case <-u.playerTimeTicker.C:
 				u.playerTimeValue += .01
 				label := fmt.Sprintf("Time: %.2f s", u.playerTimeValue)
 				u.playerTime.SetText(label)
+				u.playerProgression.SetValue(u.playerTimeValue / totalTime)
 			}
 		}
 	}()
@@ -559,15 +562,14 @@ func (u *ui) LoadUI(app fyne.App) {
 			u.rowEndSelected,
 		))
 	//u.rowSelectionLayout.Resize(fyne.NewSize(200, 20))
+	u.playerProgression = widget.NewProgressBar()
 	selectionLayout := container.New(
 		layout.NewGridLayoutWithRows(3),
+		u.playerProgression,
 		container.New(
-			layout.NewGridLayoutWithColumns(2),
+			layout.NewGridLayoutWithColumns(5),
 			goToFrameLabel,
 			gotToFrameEntry,
-		),
-		container.New(
-			layout.NewGridLayoutWithColumns(3),
 			displayChangementsButton,
 			returnToOriginalButton,
 			cleanButton,
