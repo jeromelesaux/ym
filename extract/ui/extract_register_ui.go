@@ -108,15 +108,10 @@ func (u *ui) Tapped(
 	percentage := x / size.Width * 100.
 	frame := 0
 	//fmt.Printf("percentage :%f\n", percentage)
-	if percentage < 1.5 {
+	if percentage < 0.5 {
 		frame = 0
 	} else {
-		if percentage > 95. {
-			frame = int(u.ym.NbFrames)
-		} else {
-			frame = int((float32(u.ym.NbFrames) * percentage) / 100.)
-		}
-
+		frame = int((float32(u.ym.NbFrames) * percentage) / 100.)
 	}
 	fmt.Printf("gotoframe %d\n", frame)
 	u.table.Select(widget.TableCellID{Row: frame, Col: 0})
@@ -129,8 +124,8 @@ func (u *ui) generateChart() {
 	u.lock.Lock()
 	series := []chart.Series{}
 	maxX := u.ym.NbFrames
-	if maxX > 400 {
-		maxX = 400
+	if maxX > 800 {
+		maxX = 800
 	}
 	xseries := make([]float64, maxX)
 	for i := 0; i < int(maxX); i++ {
@@ -150,12 +145,17 @@ func (u *ui) generateChart() {
 	}
 	u.lock.Unlock()
 	u.graph = &chart.Chart{
-		Elements: []chart.Renderable{},
+		TitleStyle: chart.Style{Hidden: true},
+		Elements:   []chart.Renderable{},
 		YAxis: chart.YAxis{
+			Style: chart.Style{Hidden: true},
 			Range: &chart.ContinuousRange{
 				Min: 0.0,
 				Max: 255.0,
 			},
+		},
+		XAxis: chart.XAxis{
+			Style: chart.Style{Hidden: true},
 		},
 		Width:  1200,
 		Height: 180,
@@ -686,6 +686,8 @@ func (u *ui) DisplayChange() {
 
 	u.generateChart()
 	//	u.graphicContent.Refresh()
+	u.rowStartSelected.SetText("")
+	u.rowEndSelected.SetText("")
 	wait.Hide()
 	//	u.window.Resize(fyne.NewSize(700, 600))
 }
