@@ -405,6 +405,7 @@ func (u *ui) play() {
 	u.playerIsPlaying = true
 	y = u.ym.Extract(u.frameStartSelectedIndex, u.frameEndSelectedIndex)
 	totalTime := float64(y.NbFrames) / float64(y.FrameHz)
+	nbFrames := y.NbFrames
 	go func() {
 		for {
 			select {
@@ -415,7 +416,8 @@ func (u *ui) play() {
 				return
 			case <-u.playerTimeTicker.C:
 				u.playerTimeValue += .01
-				label := fmt.Sprintf("Time: %.2f s", u.playerTimeValue)
+				currentFrame := float64(u.playerTimeValue) / totalTime * float64(nbFrames)
+				label := fmt.Sprintf("Time: %.2f seconds  Frame: %d", u.playerTimeValue, int(currentFrame))
 				u.playerTime.SetText(label)
 				u.playerProgression.SetValue(u.playerTimeValue / totalTime)
 			}
