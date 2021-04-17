@@ -17,15 +17,14 @@ import (
 	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
-	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/storage"
-	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 	"github.com/faiface/beep"
 	"github.com/faiface/beep/speaker"
 	wav2 "github.com/faiface/beep/wav"
 	"github.com/jeromelesaux/lha"
 	"github.com/jeromelesaux/ym"
+	"github.com/jeromelesaux/ym/cpc"
 	"github.com/jeromelesaux/ym/encoding"
 	w2 "github.com/jeromelesaux/ym/extract/ui/widget"
 	"github.com/jeromelesaux/ym/wav"
@@ -33,7 +32,7 @@ import (
 )
 
 var (
-	Appversion               = "with music progress bar"
+	Appversion               = "with nb frames display."
 	dialogSize               = fyne.NewSize(1000, 800)
 	graphicFileTemporaryFile = "yeti-gfx-cache.png"
 )
@@ -44,6 +43,8 @@ type ui struct {
 	fileDescription         *widget.Label
 	rowStartSelected        *widget.Entry
 	rowEndSelected          *widget.Entry
+	checkAllButton          *widget.Check
+	checkCpcYm              *widget.Check
 	frameStartSelectedIndex int
 	frameEndSelectedIndex   int
 	rowSelectionLayout      *container.Scroll
@@ -57,6 +58,7 @@ type ui struct {
 	lastDirectory     string
 	ymToSave          *ym.Ym
 	ymBackuped        *ym.Ym
+	ymCpc             *cpc.CpcYM
 	headerLevel       byte
 	compressMethod    int
 	archiveFilename   string
@@ -71,53 +73,11 @@ type ui struct {
 	playerProgression *widget.ProgressBar
 }
 
-func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
-	switch ev.Name {
-	case "S":
-		u.stop()
-	case "P":
-		u.play()
-	case "O":
-		u.OpenFileAction()
-	case "E":
-		u.SaveFileAction()
-	case "R":
-		u.ResetUI()
-	case "D":
-		u.DisplayChange()
-	case "C":
-		u.CancelChange()
-	default:
-		fmt.Printf("name:%s\n", ev.Name)
-
+func (u *ui) getCurrentYM() *ym.Ym {
+	if u.checkCpcYm.Checked {
+		return u.ymCpc.Ym
 	}
-}
-
-func (u *ui) onTypedRune(r rune) {
-	switch r {
-	default:
-		fmt.Printf("name:%v\n", r)
-
-	}
-}
-
-func (u *ui) Tapped(
-	x float32, y float32) {
-	//size := u.graphicContent.Size()
-	size := u.graphic.Size()
-	percentage := x / size.Width * 100.
-	frame := 0
-	//fmt.Printf("percentage :%f\n", percentage)
-	if percentage < 0.5 {
-		frame = 0
-	} else {
-		frame = int((float32(u.ym.NbFrames) * percentage) / 100.)
-	}
-	fmt.Printf("gotoframe %d\n", frame)
-	u.table.Select(widget.TableCellID{Row: frame, Col: 0})
-	u.table.Refresh()
-	// min 1,4 %
-	// max 95 %
+	return u.ym
 }
 
 func (u *ui) generateChart() {
@@ -175,79 +135,28 @@ func (u *ui) generateChart() {
 
 	png.Encode(fw, img)
 	fw.Close()
-	/*	var s fyne.Size
-		if u.window != nil {
-			s = u.window.Content().Size()
-		}*/
-	//u.graphicContent.SetMinSize(fyne.Size{Width: 1200., Height: 180.})
-	//i.FillMode = canvas.ImageFillStretch
 	u.graphic.SetImage(canvas.NewImageFromFile(graphicFileTemporaryFile))
-	/*if u.window != nil {
-		u.window.Content().Resize(s)
-	}*/
-	//u.graphic.Resize(fyne.Size{Width: 800, Height: 200})
-	//	u.graphicContent.Resize(fyne.Size{Width: 800, Height: 200})
-	//fmt.Printf("Graphic size %f, %f\n", u.graphic.Size().Height, u.graphic.MinSize().Width)
-}
-
-func (u *ui) updateTableLabel() fyne.CanvasObject {
-	item := widget.NewLabel("Template")
-	item.Resize(fyne.Size{
-		Width:  200,
-		Height: 20,
-	})
-	return item
-}
-
-func (u *ui) updateTableLength() (int, int) {
-	return int(u.ym.NbFrames) + 1, 16 + 1
-}
-
-func (u *ui) selectedTableCell(id widget.TableCellID) {
-
-	frame := id.Row - 1
-	register := id.Col - 1
-	if frame >= 0 && register >= 0 {
-		fmt.Printf("register [%d] , frame [%d]\n", register, frame)
-		msg := fmt.Sprintf("Set the value of the register [%d] frame [%d]", register, frame)
-		de := dialog.NewEntryDialog("Set a new value", msg, func(v string) {
-			fmt.Printf("new value [%s] register [%d] , frame [%d]\n", v, register, frame)
-			frameValue, err := strconv.ParseInt("0x"+v, 0, 16)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "error while set the value :%v\n", err.Error())
-				return
-			}
-			if frameValue > 0xFF {
-				fmt.Fprintf(os.Stderr, "Value [%X] exceed 0xff ", frameValue)
-				return
-			}
-			fmt.Printf("new value [%d][%.2X] register [%d] , frame [%d]\n", frameValue, frameValue, register, frame)
-			u.ym.Data[register][frame] = byte(frameValue)
-			u.table.Refresh()
-			//	u.window.Resize(fyne.NewSize(700, 600))
-		}, u.window)
-		de.Show()
-	}
-
 }
 
 func (u *ui) checkAllChanger(v bool) {
-	u.check0Changer(v)
-	u.check1Changer(v)
-	u.check2Changer(v)
-	u.check3Changer(v)
-	u.check4Changer(v)
-	u.check5Changer(v)
-	u.check6Changer(v)
-	u.check7Changer(v)
-	u.check8Changer(v)
-	u.check9Changer(v)
-	u.check10Changer(v)
-	u.check11Changer(v)
-	u.check12Changer(v)
-	u.check13Changer(v)
-	u.check14Changer(v)
-	u.check15Changer(v)
+	if v {
+		u.check0Changer(v)
+		u.check1Changer(v)
+		u.check2Changer(v)
+		u.check3Changer(v)
+		u.check4Changer(v)
+		u.check5Changer(v)
+		u.check6Changer(v)
+		u.check7Changer(v)
+		u.check8Changer(v)
+		u.check9Changer(v)
+		u.check10Changer(v)
+		u.check11Changer(v)
+		u.check12Changer(v)
+		u.check13Changer(v)
+		u.check14Changer(v)
+		u.check15Changer(v)
+	}
 }
 
 func (u *ui) check0Changer(v bool) {
@@ -299,6 +208,26 @@ func (u *ui) check15Changer(v bool) {
 	u.registersSelected[15] = v
 }
 
+func (u *ui) applyCpcYmFormat(v bool) {
+	if v {
+		u.ymCpc.Ym = ym.CopyYm(u.ym)
+		// change the table functions to use cpc functions
+		u.table.Length = u.updateCpcTableLength
+		u.table.CreateCell = u.updateCpcTableLabel
+		u.table.UpdateCell = u.updateCpcTableValue
+		u.table.OnSelected = u.selectedCpcTableCell
+		u.table.Refresh()
+	} else {
+		// change the table functions to use ym functions
+		u.table.Length = u.updateTableLength
+		u.table.CreateCell = u.updateTableLabel
+		u.table.UpdateCell = u.updateTableValue
+		u.table.OnSelected = u.selectedTableCell
+		u.table.Refresh()
+		u.ym = ym.CopyYm(u.ymCpc.Ym)
+	}
+}
+
 func (u *ui) endChange(v string) {
 	end, err := strconv.Atoi(v)
 	if err != nil {
@@ -321,35 +250,6 @@ func (u *ui) startChange(v string) {
 	if start < 0 || start > int(u.ym.NbFrames) {
 		u.frameStartSelectedIndex = 0
 	}
-}
-
-func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
-	label := cell.(*widget.Label)
-	if id.Col >= 17 {
-		return
-	}
-	if id.Row >= int(u.ym.NbFrames)+1 {
-		return
-	}
-	switch id.Col {
-	case 0:
-		if id.Row != 0 {
-			label.SetText(fmt.Sprintf("%d", id.Row-1))
-		} else {
-			label.SetText("Frame(s)")
-		}
-	default:
-		if id.Row == 0 {
-			label.SetText(fmt.Sprintf("register %d", id.Col-1))
-		} else {
-			label.SetText(fmt.Sprintf("%.2X", u.ym.Data[id.Col-1][id.Row-1]))
-		}
-	}
-	label.Resize(fyne.Size{Height: 20, Width: 20})
-	cell.(*widget.Label).Resize(fyne.Size{
-		Width:  20,
-		Height: 20,
-	})
 }
 
 func (u *ui) goToFrame(v string) {
@@ -403,7 +303,8 @@ func (u *ui) play() {
 	u.playerTimeTicker = time.NewTicker(time.Millisecond * 10)
 	u.playerTimeValue = 0
 	u.playerIsPlaying = true
-	y = u.ym.Extract(u.frameStartSelectedIndex, u.frameEndSelectedIndex)
+	currentYm := u.getCurrentYM()
+	y = currentYm.Extract(u.frameStartSelectedIndex, u.frameEndSelectedIndex)
 	totalTime := float64(y.NbFrames) / float64(y.FrameHz)
 	nbFrames := y.NbFrames
 	go func() {
@@ -472,175 +373,8 @@ func (u *ui) stop() {
 
 }
 
-func (u *ui) LoadUI(app fyne.App) {
-
-	u.ym = ym.NewYm()
-	u.ymBackuped = ym.NewYm()
-	u.ymToSave = ym.NewYm()
-	u.archiveFilename = "archive.ym"
-
-	format := beep.Format{SampleRate: 44100}
-	err := speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error while initialising speaker : %v\n", err)
-		return
-	}
-	fmt.Printf("Speaker init ok\n")
-	u.fileDescription = widget.NewLabel("File Description")
-	u.fileDescription.TextStyle.Monospace = true
-	u.fileDescription.SetText("File song's Author :")
-	u.fileDescription.Resize(fyne.Size{Height: 10, Width: 50})
-
-	playButton := widget.NewButtonWithIcon("Play", theme.MediaPlayIcon(), u.play)
-	stopButton := widget.NewButtonWithIcon("Stop", theme.MediaStopIcon(), u.stop)
-	u.playerTime = widget.NewLabel("Time:")
-
-	openButton := widget.NewButton("File Open ym file (.ym)", u.OpenFileAction)
-	openButton.Resize(fyne.Size{Height: 1, Width: 50})
-
-	saveButton := widget.NewButton("Save file", u.SaveFileAction)
-	saveButton.Resize(fyne.Size{Height: 1, Width: 50})
-
-	cleanButton := widget.NewButton("Clean or reset", u.ResetUI)
-	cleanButton.Resize(fyne.Size{Height: 1, Width: 50})
-
-	displayChangementsButton := widget.NewButton("Display changements", u.DisplayChange)
-	displayChangementsButton.Resize(fyne.Size{Height: 1, Width: 50})
-
-	returnToOriginalButton := widget.NewButton("Cancel changements", u.CancelChange)
-	returnToOriginalButton.Resize(fyne.Size{Height: 1, Width: 50})
-	goToFrameLabel := widget.NewLabel("Go to frame")
-	gotToFrameEntry := widget.NewEntry()
-	gotToFrameEntry.OnSubmitted = u.goToFrame
-
-	/* registers check boxes selection */
-	var registersSelectionCheckedButton = make([]*widget.Check, 17)
-	type registerCheckFunc func(bool)
-	var registersSelectFuncs = [17]registerCheckFunc{
-		u.checkAllChanger,
-		u.check0Changer,
-		u.check1Changer,
-		u.check2Changer,
-		u.check3Changer,
-		u.check4Changer,
-		u.check5Changer,
-		u.check6Changer,
-		u.check7Changer,
-		u.check8Changer,
-		u.check9Changer,
-		u.check10Changer,
-		u.check11Changer,
-		u.check12Changer,
-		u.check13Changer,
-		u.check14Changer,
-		u.check15Changer}
-
-	registerCheckLayout := container.New(
-		layout.NewGridLayoutWithRows(17),
-	)
-	registersSelectionCheckedButton[0] = widget.NewCheck("select all registers", registersSelectFuncs[0])
-	registerCheckLayout.Add(registersSelectionCheckedButton[0])
-	for i := 1; i < 17; i++ {
-		registersSelectionCheckedButton[i] = widget.NewCheck(fmt.Sprintf("register %d", i-1),
-			registersSelectFuncs[i])
-		registerCheckLayout.Add(registersSelectionCheckedButton[i])
-	}
-
-	/* end of creation  */
-
-	u.rowEndSelected = widget.NewEntry()
-	u.rowEndSelected.OnSubmitted = u.endChange
-	startFrame := widget.NewLabel("Select the first frame (starts at 0)")
-	u.rowStartSelected = widget.NewEntry()
-	endFrame := widget.NewLabel("Select the last frame")
-	u.rowStartSelected.OnSubmitted = u.startChange
-
-	u.rowSelectionLayout = container.NewVScroll(
-		container.New(
-			layout.NewGridLayoutWithColumns(4),
-			startFrame,
-			u.rowStartSelected,
-			endFrame,
-			u.rowEndSelected,
-		))
-	//u.rowSelectionLayout.Resize(fyne.NewSize(200, 20))
-	u.playerProgression = widget.NewProgressBar()
-	selectionLayout := container.New(
-		layout.NewGridLayoutWithRows(3),
-		u.playerProgression,
-		container.New(
-			layout.NewGridLayoutWithColumns(5),
-			goToFrameLabel,
-			gotToFrameEntry,
-			displayChangementsButton,
-			returnToOriginalButton,
-			cleanButton,
-		),
-		container.New(
-			layout.NewGridLayoutWithColumns(2),
-			container.NewVScroll(registerCheckLayout),
-			u.rowSelectionLayout,
-		),
-	)
-	//selectionLayout.Resize(fyne.NewSize(400, 20))
-	u.table = widget.NewTable(
-		u.updateTableLength,
-		u.updateTableLabel,
-		u.updateTableValue,
-	)
-	u.table.OnSelected = u.selectedTableCell
-	u.tableContainer = container.NewVScroll(u.table)
-
-	u.graphic = w2.NewClickableImage(u.Tapped, nil)
-	u.generateChart()
-	u.graphicContent = container.New(layout.NewMaxLayout(), u.graphic)
-	//u.graphicContent = container.NewContainerWithLayout(layout.NewMaxLayout())
-
-	u.window = app.NewWindow("YeTi")
-	u.window.SetContent(
-		container.New(
-			layout.NewGridLayoutWithRows(2),
-			container.New(
-				layout.NewGridLayoutWithRows(3),
-				container.New(
-					layout.NewGridLayoutWithColumns(2),
-					container.NewVScroll(
-						container.New(
-							layout.NewGridLayoutWithColumns(1),
-							container.NewVScroll(u.fileDescription),
-						)),
-					container.New(
-						layout.NewGridLayoutWithRows(3),
-						openButton,
-						saveButton,
-						container.New(
-							layout.NewGridLayoutWithColumns(3),
-							u.playerTime,
-							playButton,
-							stopButton,
-						)),
-				),
-				u.graphicContent,
-				container.New(
-					layout.NewGridLayoutWithRows(1),
-					selectionLayout,
-				)),
-
-			container.New(
-				layout.NewGridLayout(1),
-				u.tableContainer,
-			),
-		))
-	u.window.Canvas().SetOnTypedRune(u.onTypedRune)
-	u.window.Canvas().SetOnTypedKey(u.onTypedKey)
-	u.window.Resize(fyne.NewSize(400, 1000))
-	u.window.SetTitle("YeTi @ " + Appversion)
-	u.window.Show()
-
-}
-
 func (u *ui) prepareExport() {
-	u.ymToSave = ym.CopyYm(u.ym)
+	u.ymToSave = ym.CopyYm(u.getCurrentYM())
 	u.ymToSave.LoopFrame = 0
 	length := u.frameEndSelectedIndex - u.frameStartSelectedIndex + 1
 	if length < 0 {
@@ -709,6 +443,7 @@ func (u *ui) ResetUI() {
 	u.ym = ym.NewYm()
 	u.ymToSave = ym.NewYm()
 	u.ymBackuped = ym.NewYm()
+	u.ymCpc = cpc.NewCpcYM()
 	u.setFileDescription()
 	u.generateChart()
 	//	u.graphicContent.Refresh()
