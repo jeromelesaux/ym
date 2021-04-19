@@ -32,7 +32,7 @@ import (
 )
 
 var (
-	Appversion               = "with nb frames display."
+	Appversion               = "with cpc ym format."
 	dialogSize               = fyne.NewSize(1000, 800)
 	graphicFileTemporaryFile = "yeti-gfx-cache.png"
 )
@@ -318,6 +318,7 @@ func (u *ui) play() {
 			case <-u.playerTimeTicker.C:
 				u.playerTimeValue += .01
 				currentFrame := float64(u.playerTimeValue) / totalTime * float64(nbFrames)
+				u.table.Select(widget.TableCellID{Row: int(currentFrame), Col: 0})
 				label := fmt.Sprintf("Time: %.2f seconds  Frame: %d", u.playerTimeValue, int(currentFrame))
 				u.playerTime.SetText(label)
 				u.playerProgression.SetValue(u.playerTimeValue / totalTime)
