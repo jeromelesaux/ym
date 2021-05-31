@@ -12,27 +12,28 @@ snapshot=$(shell date +%FT%T)
 VERSION="1.0-"$(VERSIONCOMMENT)
 
 ifeq ($(suffix),rc)
-        appversion=$(VERSION)$(snapshot)
+	appversion=$(VERSION)$(snapshot)
 else 
-        appversion=$(VERSION)
+	appversion=$(VERSION)
 endif 
 
 .DEFAULT_GOAL:=build
 
 
-build: 
-        @echo "Get the dependencies" 
-        export GO111MODULE=off && go install fyne.io/fyne/v2/cmd/fyne
-        @echo "Compilation for macos"
-        rm -f $(SOURCEDIR)/extract
-        fyne package -os darwin -icon  $(SOURCEDIR)/icon/YeTi.png -name YeTi -sourceDir $(SOURCEDIR)/
-        zip -r YeTi-$(appversion)-macos.zip YeTi.app
-        @echo "Compilation for windows"
-        export GOOS=windows && export GOARCH=386 && export CGO_ENABLED=1 && export CC=i686-w64-mingw32-gcc && go build ${LDFLAGS} -o YeTi.exe $(SOURCEDIR)/
-        zip YeTi-$(appversion)-windows.zip YeTi.exe
+build:
+	@echo "Get the dependencies"
+	go get fyne.io/fyne/v2/cmd/fyne
+	go install fyne.io/fyne/v2/cmd/fyne
+	@echo "Compilation for macos"
+	rm -f $(SOURCEDIR)/extract
+	fyne package -os darwin -icon  $(SOURCEDIR)/icon/YeTi.png -name YeTi -sourceDir $(SOURCEDIR)/
+	zip -r YeTi-$(appversion)-macos.zip YeTi.app
+	@echo "Compilation for windows"
+	export GOOS=windows && export GOARCH=386 && export CGO_ENABLED=1 && export CC=i686-w64-mingw32-gcc && go build ${LDFLAGS} -o YeTi.exe $(SOURCEDIR)/
+	zip YeTi-$(appversion)-windows.zip YeTi.exe
 
 clean:
-        @echo "Cleaning all *.zip archives."
-        rm -f YeTi*.zip
-        @echo "Cleaning all binaries."
-        rm -fr YeTi*
+	@echo "Cleaning all *.zip archives."
+	rm -f YeTi*.zip
+	@echo "Cleaning all binaries."
+	rm -fr YeTi*
