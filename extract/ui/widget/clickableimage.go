@@ -20,7 +20,7 @@ func NewClickableImage(f0 func(float32, float32), f1 func(float32, float32)) *Cl
 		toCallButton1: f1,
 	}
 	c.ExtendBaseWidget(c)
-	//	c.BaseWidget.ExtendBaseWidget(c)
+	c.BaseWidget.ExtendBaseWidget(c)
 	return c
 }
 

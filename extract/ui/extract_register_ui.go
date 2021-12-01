@@ -82,6 +82,7 @@ func (u *ui) getCurrentYM() *ym.Ym {
 
 func (u *ui) generateChart() {
 	u.lock.Lock()
+	u.graph = nil
 	series := []chart.Series{}
 	maxX := u.ym.NbFrames
 	if maxX > 800 {
