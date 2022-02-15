@@ -193,7 +193,7 @@ func (y *Ym) Extract(startFrame, endFrame int) *Ym {
 	for j := 0; j < 16; j++ {
 		n.Data[j] = make([]byte, endFrame-startFrame)
 		index := 0
-		for i := startFrame; i < endFrame; i++ {
+		for i := startFrame; i < endFrame && i < len(y.Data[j]); i++ {
 			n.Data[j][index] = y.Data[j][i]
 			index++
 		}

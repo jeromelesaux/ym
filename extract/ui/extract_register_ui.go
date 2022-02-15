@@ -71,6 +71,7 @@ type ui struct {
 	playerTimeValue   float64
 	playerIsPlaying   bool
 	playerProgression *widget.ProgressBar
+	currentFrame      int
 }
 
 func (u *ui) getCurrentYM() *ym.Ym {
@@ -137,6 +138,7 @@ func (u *ui) generateChart() {
 	png.Encode(fw, img)
 	fw.Close()
 	u.graphic.SetImage(canvas.NewImageFromFile(graphicFileTemporaryFile))
+	u.table.Select(widget.TableCellID{Row: 0, Col: 0})
 }
 
 func (u *ui) checkAllChanger(v bool) {
@@ -263,9 +265,7 @@ func (u *ui) goToFrame(v string) {
 	if frame > int(u.ym.NbFrames) {
 		frame = int(u.ym.NbFrames)
 	}
-	u.table.Select(widget.TableCellID{Row: frame, Col: 0})
-	u.table.Refresh()
-
+	u.currentFrame = frame
 }
 func NewUI() *ui {
 	u := &ui{}
@@ -314,13 +314,14 @@ func (u *ui) play() {
 			case <-u.playerTimeChan:
 				u.playerIsPlaying = false
 				u.playerProgression.SetValue(0)
-				u.playerTime.SetText("Player stopped.")
+				u.playerTime.SetText(u.playerTime.Text + "\nPlayer stopped.")
+				u.table.Select(widget.TableCellID{Row: u.currentFrame, Col: 0})
 				return
 			case <-u.playerTimeTicker.C:
 				u.playerTimeValue += .01
-				currentFrame := float64(u.playerTimeValue) / totalTime * float64(nbFrames)
-				u.table.Select(widget.TableCellID{Row: int(currentFrame), Col: 0})
-				label := fmt.Sprintf("Time: %.2f seconds  Frame: %d", u.playerTimeValue, int(currentFrame))
+				u.currentFrame = int(float64(u.playerTimeValue) / totalTime * float64(nbFrames))
+				//u.table.Select(widget.TableCellID{Row: int(currentFrame), Col: 0})
+				label := fmt.Sprintf("Time: %.2f seconds  Frame: %d", u.playerTimeValue, u.currentFrame)
 				u.playerTime.SetText(label)
 				u.playerProgression.SetValue(u.playerTimeValue / totalTime)
 			}
@@ -448,7 +449,7 @@ func (u *ui) ResetUI() {
 	u.ymCpc = cpc.NewCpcYM()
 	u.setFileDescription()
 	u.generateChart()
-	//	u.graphicContent.Refresh()
+	u.graphicContent.Refresh()
 }
 
 func (u *ui) SaveFileAction() {
@@ -523,6 +524,7 @@ func (u *ui) setFileDescription() {
 
 func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 	f.Close()
+	u.ym = nil
 	u.ym = ym.NewYm()
 	var content []byte
 	archive := lha.NewLha(u.filename)
