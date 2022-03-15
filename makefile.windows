@@ -26,8 +26,8 @@ build:
 	@echo "Compilation for native windows"
 	rm -f $(SOURCEDIR)/extract
 	cd extract 
-	fyne package -os windows  -name YeTi 
-	zip ../YeTi-$(appversion)-windows.zip YeTi.exe ../opengl32.dll
+	fyne package -os windows  -name YeTi .exe
+	zip ../YeTi-$(appversion)-windows.zip YeTi.exe ../dll/opengl32.dll
 	cd ..
 
 clean:
