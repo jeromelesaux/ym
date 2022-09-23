@@ -7,16 +7,16 @@ import (
 	"os"
 )
 
-func drawCursor(filePath string, x int) (error, image.Image) {
+func drawCursor(filePath string, x int) (image.Image, error) {
 	fr, err := os.Open(filePath)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	defer fr.Close()
 
 	img, _, err := image.Decode(fr)
 	if err != nil {
-		return err, nil
+		return nil, err
 	}
 	imgDst := image.NewNRGBA(img.Bounds())
 	for x := 0; x < img.Bounds().Max.X; x++ {
@@ -28,5 +28,5 @@ func drawCursor(filePath string, x int) (error, image.Image) {
 
 	draw.Draw(imgDst, image.Rect(x, 0, x+5, 160), &image.Uniform{red}, image.Pt(100, 0), draw.Src)
 	//err := png.Encode(fw, imgDst)
-	return err, imgDst
+	return imgDst, err
 }
