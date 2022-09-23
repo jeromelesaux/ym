@@ -353,15 +353,12 @@ func (u *ui) play() {
 		fmt.Printf("Speaker play the new file %v\n", format)
 
 		for {
-			select {
-			case <-u.speakerDone:
-
-				streamer.Close()
-				speaker.Clear()
-				u.playerTimeChan <- true
-				fmt.Printf("Now the speaker is cleared\n")
-				return
-			}
+			<-u.speakerDone
+			streamer.Close()
+			speaker.Clear()
+			u.playerTimeChan <- true
+			fmt.Printf("Now the speaker is cleared\n")
+			return
 		}
 
 	}()

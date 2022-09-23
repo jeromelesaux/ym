@@ -10,7 +10,7 @@ import (
 	"github.com/jeromelesaux/ym/extract/ui"
 )
 
-var ErrorIsNotDirectory = errors.New("Is not a directory, Quiting.")
+var ErrorIsNotDirectory = errors.New("is not a directory, Quiting")
 
 var ()
 
