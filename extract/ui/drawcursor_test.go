@@ -34,5 +34,8 @@ func TestDrawCursor(t *testing.T) {
 	red := color.RGBA{R: 255, B: 0, G: 0, A: 255}
 	x := 300
 	draw.Draw(imgDst, image.Rect(x, 0, x+5, 160), &image.Uniform{red}, image.Pt(100, 0), draw.Src)
-	png.Encode(fw, imgDst)
+	err = png.Encode(fw, imgDst)
+	if err != nil {
+		t.Fatal(err)
+	}
 }

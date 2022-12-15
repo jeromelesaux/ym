@@ -345,7 +345,10 @@ func (y *YMMusic) WaveFile(wavFilepath string) error {
 		}
 	}
 	fmt.Printf("\n")
-	fw.Seek(0, io.SeekStart)
+	_, err = fw.Seek(0, io.SeekStart)
+	if err != nil {
+		return err
+	}
 	head.RIFFMagic = ID_RIFF
 	head.FileType = ID_WAVE
 	head.FormMagic = ID_FMT

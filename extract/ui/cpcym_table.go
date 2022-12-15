@@ -45,10 +45,18 @@ func (u *ui) selectedCpcTableCell(id widget.TableCellID) {
 					return
 				}
 				fmt.Printf("new value [%d][%.2X] register [%d] , frame [%d]\n", frameValue, frameValue, register, frame)
-				u.ymCpc.SetRegister8bits(register, frame, byte(frameValue))
+				err := u.ymCpc.SetRegister8bits(register, frame, byte(frameValue))
+				if err != nil {
+					fmt.Printf("error with new value [%d][%.4X] register [%d] , frame [%d], error :%v\n", frameValue, frameValue, register, frame, err)
+
+				}
 			} else {
 				fmt.Printf("new value [%d][%.4X] register [%d] , frame [%d]\n", frameValue, frameValue, register, frame)
-				u.ymCpc.SetRegister16bits(register, frame, uint16(frameValue))
+				err := u.ymCpc.SetRegister16bits(register, frame, uint16(frameValue))
+				if err != nil {
+					fmt.Printf("error with new value [%d][%.4X] register [%d] , frame [%d], error :%v\n", frameValue, frameValue, register, frame, err)
+
+				}
 			}
 			u.table.Refresh()
 		}, u.window)

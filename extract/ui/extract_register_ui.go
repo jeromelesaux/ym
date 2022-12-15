@@ -135,7 +135,10 @@ func (u *ui) generateChart() {
 	}
 	fw, _ := os.Create(graphicFileTemporaryFile)
 
-	png.Encode(fw, img)
+	err = png.Encode(fw, img)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error while encoding png image : %v \n", err)
+	}
 	fw.Close()
 	u.graphic.SetImage(canvas.NewImageFromFile(graphicFileTemporaryFile))
 	u.table.Select(widget.TableCellID{Row: 0, Col: 0})
@@ -330,7 +333,10 @@ func (u *ui) play() {
 	go func() {
 		u.speakerDone = make(chan bool)
 		v := wav.NewYMMusic()
-		v.LoadMemory(y)
+		err := v.LoadMemory(y)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error while loading memory error:%v\n", err)
+		}
 		content, err := v.Wave()
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error while converting ym to wave with error :%v\n", err.Error())
