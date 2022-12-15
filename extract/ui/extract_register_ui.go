@@ -14,7 +14,6 @@ import (
 	"image/png"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/storage"
@@ -32,9 +31,8 @@ import (
 )
 
 var (
-	Appversion               = "with cpc ym format."
-	dialogSize               = fyne.NewSize(1000, 800)
-	graphicFileTemporaryFile = "yeti-gfx-cache.png"
+	Appversion = "with cpc ym format."
+	dialogSize = fyne.NewSize(1000, 800)
 )
 
 type ui struct {
@@ -133,14 +131,14 @@ func (u *ui) generateChart() {
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error while decoding png image : %v \n", err)
 	}
-	fw, _ := os.Create(graphicFileTemporaryFile)
+	/*fw, _ := os.Create(graphicFileTemporaryFile)
 
 	err = png.Encode(fw, img)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error while encoding png image : %v \n", err)
 	}
-	fw.Close()
-	u.graphic.SetImage(canvas.NewImageFromFile(graphicFileTemporaryFile))
+	fw.Close()*/
+	u.graphic.SetImage(img)
 	u.table.Select(widget.TableCellID{Row: 0, Col: 0})
 }
 

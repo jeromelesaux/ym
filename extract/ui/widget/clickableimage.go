@@ -1,6 +1,8 @@
 package widget
 
 import (
+	"image"
+
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/canvas"
 	w2 "fyne.io/fyne/v2/widget"
@@ -16,6 +18,7 @@ type ClickableImage struct {
 func NewClickableImage(f0 func(float32, float32), f1 func(float32, float32)) *ClickableImage {
 	c := &ClickableImage{
 		Icon:          &w2.Icon{},
+		image:         &canvas.Image{},
 		toCallButton0: f0,
 		toCallButton1: f1,
 	}
@@ -43,15 +46,16 @@ func (ci *ClickableImage) TappedSecondary(pe *fyne.PointEvent) {
 	}
 }
 
-func (ci *ClickableImage) SetImage(i *canvas.Image) {
-	ci.image = i
-	width := i.Size().Width
-	height := i.Size().Height
+func (ci *ClickableImage) SetImage(img image.Image) {
+	ci.image.Image = img
+	width := img.Bounds().Max.X
+	height := img.Bounds().Max.Y
 
 	ci.image.SetMinSize(
 		fyne.NewSize(float32(width), float32(height)))
-	ci.ExtendBaseWidget(ci)
-	ci.Refresh()
+	ci.image.Refresh()
+	//ci.ExtendBaseWidget(ci)
+	//ci.Refresh()
 	//ci.BaseWidget.Refresh()
 }
 
