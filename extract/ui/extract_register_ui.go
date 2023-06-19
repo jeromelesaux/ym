@@ -31,7 +31,7 @@ import (
 )
 
 var (
-	Appversion = "open_uncompress_ym_files."
+	Appversion = "fix_saved"
 	dialogSize = fyne.NewSize(1000, 800)
 )
 
@@ -384,6 +384,16 @@ func (u *ui) prepareExport() {
 	if length < 0 {
 		return
 	}
+	u.ymToSave.AuthorName = u.ym.AuthorName
+	u.ymToSave.DigidrumNb = u.ym.DigidrumNb
+	copy(u.ymToSave.Digidrums, u.ym.Digidrums)
+	u.ymToSave.EndID = u.ym.EndID
+	u.ymToSave.FileID = u.ym.FileID
+	u.ymToSave.FrameHz = u.ym.FrameHz
+	u.ymToSave.LoopFrame = u.ym.LoopFrame
+	copy(u.ymToSave.MixBlock, u.ym.MixBlock)
+	u.ymToSave.MusicLenInMs = u.ym.MusicLenInMs
+
 	for i := 0; i < 16; i++ {
 		u.ymToSave.Data[i] = make([]byte, length)
 		if u.registersSelected[i] {
@@ -609,6 +619,12 @@ func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
 	// force to last version YM
 	if u.ymToSave.FileID != ym.YM6 {
 		u.ymToSave.FileID = ym.YM6
+	}
+
+	// check if the ymTosave is not empty
+	if u.frameStartSelectedIndex == 0 && u.frameEndSelectedIndex == 0 {
+		u.frameEndSelectedIndex = int(u.ym.NbFrames)
+		u.prepareExport()
 	}
 	content, err := encoding.Marshall(u.ymToSave)
 	if err != nil {
