@@ -31,7 +31,7 @@ import (
 )
 
 var (
-	Appversion = "with cpc ym format."
+	Appversion = "open_uncompress_ym_files."
 	dialogSize = fyne.NewSize(1000, 800)
 )
 
@@ -499,7 +499,7 @@ func (u *ui) OpenFileAction() {
 			fd.SetLocation(lister)
 		}
 	}
-	fd.SetFilter(storage.NewExtensionFileFilter([]string{".ym"}))
+	fd.SetFilter(storage.NewExtensionFileFilter([]string{".ym", ".ym5", ".bin"}))
 	fd.Resize(dialogSize)
 	fd.Show()
 }
@@ -549,18 +549,21 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 			dialog.ShowError(err, u.window)
 			return
 		}
-		//	f, _ := os.Create("dump.bin")
-		//	defer f.Close()
-		//	f.Write(content)
-		err = encoding.Unmarshall(content, u.ym)
-		if err != nil && io.EOF != err {
+	} else {
+		content, err = os.ReadFile(u.filename)
+		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error while decoding ym file %s, error :%v\n", u.filename, err.Error())
 			dialog.ShowError(err, u.window)
 			return
 		}
-		fmt.Printf("NB frames:[%d]\n", u.ym.NbFrames)
-
 	}
+	err = encoding.Unmarshall(content, u.ym)
+	if err != nil && io.EOF != err {
+		fmt.Fprintf(os.Stderr, "Error while decoding ym file %s, error :%v\n", u.filename, err.Error())
+		dialog.ShowError(err, u.window)
+		return
+	}
+	fmt.Printf("NB frames:[%d]\n", u.ym.NbFrames)
 
 	u.generateChart()
 	u.setFileDescription()
