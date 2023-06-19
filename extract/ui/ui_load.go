@@ -47,6 +47,9 @@ func (u *ui) LoadUI(app fyne.App) {
 	saveButton := widget.NewButton("Save file", u.SaveFileAction)
 	saveButton.Resize(fyne.Size{Height: 1, Width: 50})
 
+	exportRegisters := widget.NewButton("Export registers", u.ExportRegisters)
+	exportRegisters.Resize(fyne.Size{Height: 1, Width: 50})
+
 	cleanButton := widget.NewButton("Clean or reset", u.ResetUI)
 	cleanButton.Resize(fyne.Size{Height: 1, Width: 50})
 
@@ -161,9 +164,10 @@ func (u *ui) LoadUI(app fyne.App) {
 							container.NewVScroll(u.fileDescription),
 						)),
 					container.New(
-						layout.NewGridLayoutWithRows(3),
+						layout.NewGridLayoutWithRows(4),
 						openButton,
 						saveButton,
+						exportRegisters,
 						container.New(
 							layout.NewGridLayoutWithColumns(3),
 							u.playerTime,

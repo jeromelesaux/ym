@@ -453,6 +453,39 @@ func (u *ui) ResetUI() {
 	u.graphicContent.Refresh()
 }
 
+func (u *ui) ExportRegisters() {
+	fd := dialog.NewFolderOpen(func(lister fyne.ListableURI, err error) {
+		if err == nil && lister == nil {
+			return
+		}
+		if err != nil {
+			dialog.ShowError(err, u.window)
+			return
+		}
+		folderPath := lister.Path()
+		for i := 0; i < 16; i++ {
+			filePath := folderPath + string(filepath.Separator) + filepath.Base(u.filename) + ".r" + fmt.Sprintf("%.2d", i)
+			fw, err := os.Create(filePath)
+			if err != nil {
+				dialog.ShowError(err, u.window)
+				return
+			}
+			reg := u.ym.Data[i]
+			_, err = fw.Write(reg)
+			if err != nil {
+				fw.Close()
+				dialog.ShowError(err, u.window)
+				return
+			}
+			fw.Close()
+		}
+
+		dialog.ShowInformation("registers saved", "Your files are saved in ["+folderPath+"].", u.window)
+	}, u.window)
+	fd.Resize(dialogSize)
+	fd.Show()
+}
+
 func (u *ui) SaveFileAction() {
 	fd := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
 		if err == nil && writer == nil {

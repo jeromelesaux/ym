@@ -26,7 +26,8 @@ build:
 	@echo "Compilation for native windows"
 	rm -f $(SOURCEDIR)/extract
 	cd extract 
-	fyne package -os windows  -name YeTi.exe
+	//fyne package -os windows sourceDir ./ -name YeTi.exe
+	GOOS=windows GOARCH=386 CGO_ENABLED=1 CC=i686-w64-mingw32-gcc    go build -o ../YeTi.exe ./
 	zip ../YeTi-$(appversion)-windows.zip YeTi.exe ../dll/opengl32.dll
 	cd ..
 
