@@ -384,15 +384,6 @@ func (u *ui) prepareExport() {
 	if length < 0 {
 		return
 	}
-	u.ymToSave.AuthorName = u.ym.AuthorName
-	u.ymToSave.DigidrumNb = u.ym.DigidrumNb
-	copy(u.ymToSave.Digidrums, u.ym.Digidrums)
-	u.ymToSave.EndID = u.ym.EndID
-	u.ymToSave.FileID = u.ym.FileID
-	u.ymToSave.FrameHz = u.ym.FrameHz
-	u.ymToSave.LoopFrame = u.ym.LoopFrame
-	copy(u.ymToSave.MixBlock, u.ym.MixBlock)
-	u.ymToSave.MusicLenInMs = u.ym.MusicLenInMs
 
 	for i := 0; i < 16; i++ {
 		u.ymToSave.Data[i] = make([]byte, length)
@@ -622,7 +613,7 @@ func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
 	}
 
 	// check if the ymTosave is not empty
-	if u.frameStartSelectedIndex == 0 && u.frameEndSelectedIndex == 0 {
+	if len(u.ymToSave.Data[0]) == 0 {
 		u.frameEndSelectedIndex = int(u.ym.NbFrames)
 		u.prepareExport()
 	}

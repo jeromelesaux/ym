@@ -97,8 +97,8 @@ func CopyYm(ym *Ym) *Ym {
 
 	n.Size = ym.Size
 	for j := 0; j < 16; j++ {
-		n.Data[j] = make([]byte, ym.NbFrames)
-		for i := 0; i < int(ym.NbFrames); i++ {
+		n.Data[j] = make([]byte, len(ym.Data[j]))
+		for i := 0; i < len(ym.Data[j]); i++ {
 			n.Data[j][i] = ym.Data[j][i]
 		}
 	}
@@ -122,6 +122,7 @@ func CopyYm(ym *Ym) *Ym {
 	n.MusicLenInMs = ym.MusicLenInMs
 	n.NbVoice = ym.NbVoice
 	n.EndID = ym.EndID
+
 	return n
 }
 
