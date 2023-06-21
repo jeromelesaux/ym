@@ -23,13 +23,20 @@ endif
 build:
 	@echo "Get the dependencies"
 	go mod tidy 
+	(make build-darwin)
+	(make build-windows)
+
+
+build-darwin:
 	@echo "Compilation for macos"
 	rm -f $(SOURCEDIR)/extract
-	fyne package -os darwin -icon  $(SOURCEDIR)/icon/YeTi.png -name YeTi -sourceDir $(SOURCEDIR)/
+	fyne package -os darwin -icon ./Icon.png -name YeTi -sourceDir $(SOURCEDIR)/
 	zip -r YeTi-$(appversion)-macos.zip YeTi.app
+
+build-windows:
 	@echo "Compilation for windows"
-	export GOOS=windows && export GOARCH=386 && export CGO_ENABLED=1 && export CC=i686-w64-mingw32-gcc && go build ${LDFLAGS} -o YeTi.exe $(SOURCEDIR)/
-	zip YeTi-$(appversion)-windows.zip YeTi.exe
+	GOOS=windows && GOARCH=386 && CGO_ENABLED=1 && CC=i686-w64-mingw32-gcc && go build ${LDFLAGS} -o YeTi.exe $(SOURCEDIR)/
+	zip YeTi-$(appversion)-windows.zip YeTi.exe ../dll/opengl32.dll
 
 clean:
 	@echo "Cleaning all *.zip archives."
