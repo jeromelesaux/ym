@@ -35,7 +35,7 @@ build-darwin:
 
 build-windows:
 	@echo "Compilation for windows"
-	GOOS=windows && GOARCH=386 && CGO_ENABLED=1 && CC=i686-w64-mingw32-gcc && go build ${LDFLAGS} -o YeTi.exe $(SOURCEDIR)/
+	GOOS=windows && GOARCH=amd64 && CGO_ENABLED=1 && CC=i686-w64-mingw32-gcc && go build -o YeTi.exe $(SOURCEDIR)/
 	zip YeTi-$(appversion)-windows.zip YeTi.exe ../dll/opengl32.dll
 
 clean:

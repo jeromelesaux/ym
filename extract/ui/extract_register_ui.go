@@ -31,7 +31,7 @@ import (
 )
 
 var (
-	Appversion = "fix_saved"
+	Appversion = "compilation_issue"
 	dialogSize = fyne.NewSize(1000, 800)
 )
 

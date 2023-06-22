@@ -244,8 +244,6 @@ github.com/jackc/puddle v1.1.0/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dv
 github.com/jackc/puddle v1.1.1/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dvjSWk=
 github.com/jackc/puddle v1.1.3/go.mod h1:m4B5Dj62Y0fbyuIc15OsIqK0+JU8nkqQjsgx7dvjSWk=
 github.com/jackmordaunt/icns v0.0.0-20181231085925-4f16af745526/go.mod h1:UQkeMHVoNcyXYq9otUupF7/h/2tmHlhrS2zw7ZVvUqc=
-github.com/jeromelesaux/lha v0.0.0-20230412090628-e04af12e6130 h1:JcOFDEHLQG4A/DvMy8sKx42r5Ux2tEm2YbUPCHUsdAI=
-github.com/jeromelesaux/lha v0.0.0-20230412090628-e04af12e6130/go.mod h1:uzkurPUsDQS9vYvfCGIirh14qIIYEg8HFWylJF5H9jY=
 github.com/jeromelesaux/lha v0.0.0-20230621125200-b8c29b83d5d6 h1:NzVqxhggADrJOY7sM8hckGe3SvbNaXT5X5uui6oDlpI=
 github.com/jeromelesaux/lha v0.0.0-20230621125200-b8c29b83d5d6/go.mod h1:uzkurPUsDQS9vYvfCGIirh14qIIYEg8HFWylJF5H9jY=
 github.com/jfreymuth/oggvorbis v1.0.0/go.mod h1:abe6F9QRjuU9l+2jek3gj46lu40N4qlYxh2grqkLEDM=
