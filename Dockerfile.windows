@@ -1,0 +1,6 @@
+FROM winamd64/winamd64:latest
+
+RUN mkdir /ym
+WORKDIR /ym
+COPY . . 
+RUN CGO_ENABLED=1 go build -o YeTi.exe ./extract
