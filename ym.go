@@ -98,9 +98,7 @@ func CopyYm(ym *Ym) *Ym {
 	n.Size = ym.Size
 	for j := 0; j < 16; j++ {
 		n.Data[j] = make([]byte, len(ym.Data[j]))
-		for i := 0; i < len(ym.Data[j]); i++ {
-			n.Data[j][i] = ym.Data[j][i]
-		}
+		copy(n.Data[j][:], ym.Data[j][:])
 	}
 
 	n.NbMixBlock = ym.NbMixBlock
@@ -151,6 +149,7 @@ func (y *Ym) FormatType() string {
 	}
 }
 
+// nolint: funlen
 func (y *Ym) Extract(startFrame, endFrame int) *Ym {
 	n := NewYm()
 	n.FileID = y.FileID

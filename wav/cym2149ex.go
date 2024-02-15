@@ -5,7 +5,9 @@ import "fmt"
 type CYm2149Ex struct {
 	dcAdjust *CDcAdjuster
 
-	frameCycle     uint32
+	// nolint: unused
+	frameCycle uint32
+	// nolint: unused
 	cyclePerSample uint32
 
 	replayFrequency int32
@@ -37,13 +39,15 @@ type CYm2149Ex struct {
 	noisePos     uint32
 	rndRack      uint32
 	currentNoise uint32
-	bWrite13     uint32
+	// nolint: unused
+	bWrite13 uint32
 
-	envStep      uint32
-	envPos       uint32
-	envPhase     int32
-	envShape     int32
-	envData      [][][]byte //[16][2][16 * 2]byte
+	envStep  uint32
+	envPos   uint32
+	envPhase int32
+	envShape int32
+	envData  [][][]byte //[16][2][16 * 2]byte
+	// nolint: unused
 	globalVolume int32
 
 	specialEffect   [3]YmSpecialEffect
@@ -125,6 +129,7 @@ func (c *CYm2149Ex) sidStop(voice int32) {
 	c.specialEffect[voice].bSid = false
 }
 
+// nolint: funlen, gocognit
 func (c *CYm2149Ex) writeRegister(reg, data int32) {
 	switch reg {
 	case 0:
@@ -269,7 +274,7 @@ func (c *CYm2149Ex) envStepCompute(rHigh, rLow byte) uint32 {
 	}
 	var step int64 = int64(c.internalClock)
 	step <<= (16 + 16 - 9)
-	step /= int64(int64(per) * int64(c.replayFrequency))
+	step /= int64(per) * int64(c.replayFrequency)
 	return uint32(step)
 }
 
@@ -317,7 +322,7 @@ func (c *CYm2149Ex) readRegister(reg int32) int32 {
 func (c *CYm2149Ex) syncBuzzerStart(timerFreq, envShape int32) {
 	var tmp uint32 = uint32(timerFreq) * ((1 << 31) / uint32(c.replayFrequency))
 	c.envShape = envShape & 15
-	c.syncBuzzerStep = uint32(tmp)
+	c.syncBuzzerStep = tmp
 	c.syncBuzzerPhase = 0
 	c.bSyncBuzzer = true
 }
@@ -406,11 +411,11 @@ func (c *CYm2149Ex) nextSample() int16 {
 	// Tone+noise+env+DAC for three voices !
 	//---------------------------------------------------
 	bt = ((int32(c.posA) >> 31) | int32(c.mixerTA)) & (bn | int32(c.mixerNA))
-	vol = int32(*c.pVolA) & bt
+	vol = (*c.pVolA) & bt
 	bt = ((int32(c.posB) >> 31) | int32(c.mixerTB)) & (bn | int32(c.mixerNB))
-	vol += int32(*c.pVolB) & bt
+	vol += (*c.pVolB) & bt
 	bt = ((int32(c.posC) >> 31) | int32(c.mixerTC)) & (bn | int32(c.mixerNC))
-	vol += int32(*c.pVolC) & bt
+	vol += (*c.pVolC) & bt
 
 	//---------------------------------------------------
 	// Inc

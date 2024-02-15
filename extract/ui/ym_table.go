@@ -26,6 +26,7 @@ func (u *ui) selectedTableCell(id widget.TableCellID) {
 	if frame >= 0 && register >= 0 {
 		fmt.Printf("register [%d] , frame [%d]\n", register, frame)
 		msg := fmt.Sprintf("Set the value of the register [%d] frame [%d]", register, frame)
+		// nolint: staticcheck
 		de := dialog.NewEntryDialog("Set a new value", msg, func(v string) {
 			fmt.Printf("new value [%s] register [%d] , frame [%d]\n", v, register, frame)
 			frameValue, err := strconv.ParseInt("0x"+v, 0, 16)
@@ -47,6 +48,7 @@ func (u *ui) selectedTableCell(id widget.TableCellID) {
 
 }
 
+// nolint: ireturn
 func (u *ui) updateTableLabel() fyne.CanvasObject {
 	item := widget.NewLabel("Template")
 	item.Resize(fyne.Size{

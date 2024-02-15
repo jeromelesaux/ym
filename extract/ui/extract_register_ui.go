@@ -273,6 +273,7 @@ func NewUI() *ui {
 	return u
 }
 
+// nolint: funlen
 func (u *ui) play() {
 	if u.playerIsPlaying {
 		return
@@ -320,7 +321,7 @@ func (u *ui) play() {
 				return
 			case <-u.playerTimeTicker.C:
 				u.playerTimeValue += .01
-				u.currentFrame = int(float64(u.playerTimeValue) / totalTime * float64(nbFrames))
+				u.currentFrame = int(u.playerTimeValue / totalTime * float64(nbFrames))
 				//u.table.Select(widget.TableCellID{Row: int(currentFrame), Col: 0})
 				label := fmt.Sprintf("Time: %.2f seconds  Frame: %d", u.playerTimeValue, u.currentFrame)
 				u.playerTime.SetText(label)
