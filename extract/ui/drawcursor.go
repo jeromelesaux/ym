@@ -7,6 +7,7 @@ import (
 	"os"
 )
 
+// nolint: unused, deadcode
 func drawCursor(filePath string, x int) (image.Image, error) {
 	fr, err := os.Open(filePath)
 	if err != nil {

@@ -59,6 +59,7 @@ func (ci *ClickableImage) SetImage(img image.Image) {
 	//ci.BaseWidget.Refresh()
 }
 
+// nolint: ireturn
 func (ci *ClickableImage) CreateRenderer() fyne.WidgetRenderer {
 	//ci.BaseWidget.ExtendBaseWidget(ci)
 	return &clickableImageRenderer{

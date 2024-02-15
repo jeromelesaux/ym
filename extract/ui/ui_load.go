@@ -17,6 +17,7 @@ import (
 	w2 "github.com/jeromelesaux/ym/extract/ui/widget"
 )
 
+// nolint: funlen
 func (u *ui) LoadUI(app fyne.App) {
 
 	u.ym = ym.NewYm()
@@ -147,6 +148,7 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	u.graphic = w2.NewClickableImage(u.Tapped, nil)
 	u.generateChart()
+	// nolint: staticcheck
 	u.graphicContent = container.New(layout.NewMaxLayout(), u.graphic)
 	//u.graphicContent = container.NewContainerWithLayout(layout.NewMaxLayout())
 

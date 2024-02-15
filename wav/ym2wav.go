@@ -73,7 +73,8 @@ type YMMusic struct {
 	bMusicOk    bool
 	bPause      bool
 	//nbTimerKey              int32
-	pTimeInfo               []ym.TimeKey
+	pTimeInfo []ym.TimeKey
+	// nolint: unused
 	musicLenInMs            uint32
 	iMusicPosAccurateSample uint32
 	iMusicPosInMs           uint32
@@ -142,6 +143,7 @@ func (y *YMMusic) trackerInit(volMaxPercent int32) {
 	}
 }
 
+// nolint: funlen
 func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 	if v == nil {
 		return fmt.Errorf("YM is nil")
@@ -312,6 +314,7 @@ func (y *YMMusic) Wave() ([]byte, error) {
 	return wavContent, nil
 }
 
+// nolint: funlen
 func (y *YMMusic) WaveFile(wavFilepath string) error {
 	head := &WAVEHeader{}
 	fw, err := os.Create(wavFilepath)
@@ -635,6 +638,7 @@ func (y *YMMusic) readNextBlockInfo() {
 	y.currentPos &= ((1 << 12) - 1)
 }
 
+// nolint: funlen, gocognit
 func (y *YMMusic) player() {
 	var (
 		ptr    int32
@@ -715,7 +719,7 @@ func (y *YMMusic) player() {
 					voice = code - 1
 					prediv = uint32(mfpPrediv[(y.pDataStream[6][ptr]>>5)&7])
 					prediv *= uint32(y.pDataStream[14][ptr])
-					tmpFreq = 0
+					//tmpFreq = 0
 					if prediv != 0 {
 						tmpFreq = 2457600 / prediv
 						y.ymChip.sidStart(voice, int32(tmpFreq), int32(y.pDataStream[voice+8][ptr]&15))
@@ -787,6 +791,7 @@ func (y *YMMusic) player() {
 
 */
 
+// nolint: funlen
 func (y *YMMusic) readYm6Effect(pReg [][]byte, ptr int32, code, prediv, count int32) {
 	code = int32(pReg[code][ptr]) & 0xf0
 	prediv = int32(pReg[prediv][ptr]>>5) & 7
@@ -802,7 +807,7 @@ func (y *YMMusic) readYm6Effect(pReg [][]byte, ptr int32, code, prediv, count in
 		case 0x00: // SID
 			prediv = int32(mfpPrediv[prediv])
 			prediv *= count
-			tmpFreq = 0
+			//tmpFreq = 0
 			if prediv != 0 {
 				tmpFreq = uint32(2457600 / prediv)
 				if (code & 0xc0) == 0x00 {
@@ -815,7 +820,7 @@ func (y *YMMusic) readYm6Effect(pReg [][]byte, ptr int32, code, prediv, count in
 
 			prediv = int32(mfpPrediv[prediv])
 			prediv *= count
-			tmpFreq = 0
+			//tmpFreq = 0
 			if prediv != 0 {
 				tmpFreq = uint32(2457600 / prediv)
 				if (code & 0xc0) == 0x00 {
@@ -840,7 +845,7 @@ func (y *YMMusic) readYm6Effect(pReg [][]byte, ptr int32, code, prediv, count in
 
 			prediv = int32(mfpPrediv[prediv])
 			prediv *= count
-			tmpFreq = 0
+			//tmpFreq = 0
 			if prediv != 0 {
 				tmpFreq = uint32(2457600 / prediv)
 				y.ymChip.syncBuzzerStart(int32(tmpFreq), int32(pReg[voice+8][ptr]&15))

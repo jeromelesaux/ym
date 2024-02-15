@@ -10,6 +10,7 @@ import (
 	"github.com/jeromelesaux/ym/extract/ui"
 )
 
+// nolint: deadcode
 var ErrorIsNotDirectory = errors.New("is not a directory, Quiting")
 
 var ()
@@ -23,6 +24,7 @@ func main() {
 	if err != nil {
 		app.SetIcon(icon)
 	} else {
+		// nolint: staticcheck
 		app.SetIcon(theme.FyneLogo())
 	}
 	/* set new window */

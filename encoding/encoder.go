@@ -69,6 +69,7 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 	return nil
 }
 
+// nolint: funlen, gocognit
 func Marshall(y *ym.Ym) ([]byte, error) {
 	var b bytes.Buffer
 	if err := binary.Write(&b, binary.BigEndian, &y.FileID); err != nil {
@@ -156,6 +157,7 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 	return b.Bytes(), err
 }
 
+// nolint: unused, deadcode
 func writeRegister(v byte, index int) byte {
 	switch index {
 	case 0:
@@ -190,6 +192,7 @@ func writeRegister(v byte, index int) byte {
 	return v
 }
 
+// nolint: funlen, gocognit
 func umarshallYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.NbFrames); err != nil {
 		return err
@@ -301,6 +304,7 @@ func umarshallYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	return nil
 }
 
+// nolint: funlen, gocognit
 func umarshallYmTracker(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.NbVoice); err != nil {
 		return err
@@ -431,6 +435,7 @@ func umarshallLegacyYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	return nil
 }
 
+// nolint: funlen, gocognit
 func umarshallYmMix(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.SongAttributes); err != nil {
 		return err
@@ -442,7 +447,7 @@ func umarshallYmMix(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &sampleSize); err != nil {
 		return err
 	}
-	y.NbFrames = uint32(sampleSize)
+	y.NbFrames = sampleSize
 	if err := binary.Read(r, binary.BigEndian, &y.NbMixBlock); err != nil {
 		return err
 	}
