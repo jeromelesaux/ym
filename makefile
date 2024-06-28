@@ -30,7 +30,7 @@ build:
 build-darwin:
 	@echo "Compilation for macos"
 	rm -f $(SOURCEDIR)/extract
-	fyne package -os darwin -icon ./Icon.png -name YeTi -sourceDir $(SOURCEDIR)/
+	GOARCH=amd64 &&  fyne package -os darwin -icon ./Icon.png -name YeTi -sourceDir $(SOURCEDIR)/
 	zip -r YeTi-$(appversion)-macos.zip YeTi.app
 
 build-windows:
