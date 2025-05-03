@@ -54,6 +54,12 @@ func (u *ui) LoadUI(app fyne.App) {
 	cleanButton := widget.NewButton("Clean or reset", u.ResetUI)
 	cleanButton.Resize(fyne.Size{Height: 1, Width: 50})
 
+	importExcel := widget.NewButton("Import data (Excel)", u.ImportExcel)
+	importExcel.Resize(fyne.Size{Height: 1, Width: 50})
+
+	exportExcel := widget.NewButton("Export data (Excel)", u.ExportExcel)
+	exportExcel.Resize(fyne.Size{Height: 1, Width: 50})
+
 	displayChangementsButton := widget.NewButton("Display changements", u.DisplayChange)
 	displayChangementsButton.Resize(fyne.Size{Height: 1, Width: 50})
 
@@ -166,16 +172,24 @@ func (u *ui) LoadUI(app fyne.App) {
 							container.NewVScroll(u.fileDescription),
 						)),
 					container.New(
-						layout.NewGridLayoutWithRows(4),
-						openButton,
-						saveButton,
-						exportRegisters,
+						layout.NewGridLayoutWithColumns(2),
+						container.New(layout.NewGridLayoutWithRows(3),
+							openButton,
+							saveButton,
+							exportRegisters,
+						),
 						container.New(
-							layout.NewGridLayoutWithColumns(3),
-							u.playerTime,
-							playButton,
-							stopButton,
-						)),
+							layout.NewGridLayoutWithRows(3),
+							importExcel,
+							exportExcel,
+							container.New(
+								layout.NewGridLayoutWithColumns(3),
+								u.playerTime,
+								playButton,
+								stopButton,
+							),
+						),
+					),
 				),
 				u.graphicContent,
 				container.New(

@@ -26,6 +26,7 @@ import (
 	"github.com/jeromelesaux/ym/cpc"
 	"github.com/jeromelesaux/ym/encoding"
 	w2 "github.com/jeromelesaux/ym/extract/ui/widget"
+	"github.com/jeromelesaux/ym/extract/ui/xls"
 	"github.com/jeromelesaux/ym/wav"
 	chart "github.com/wcharczuk/go-chart"
 )
@@ -455,6 +456,68 @@ func (u *ui) ResetUI() {
 	u.graphicContent.Refresh()
 }
 
+func (u *ui) ExportExcel() {
+	fd := dialog.NewFileSave(func(writer fyne.URIWriteCloser, err error) {
+		if err == nil && writer == nil {
+			return
+		}
+		if err != nil {
+			dialog.ShowError(err, u.window)
+			return
+		}
+
+		filepath := writer.URI().Path()
+		xl := xls.XlsFile{}
+		if err := xl.New(filepath, u.ym.Data); err != nil {
+			dialog.ShowError(err, u.window)
+			return
+		}
+		dialog.ShowInformation("Xlsx file saved", "Your file is saved in ["+filepath+"].", u.window)
+	}, u.window)
+	fd.Resize(dialogSize)
+	fd.Show()
+}
+
+func (u *ui) ImportExcel() {
+	fd := dialog.NewFileOpen(func(reader fyne.URIReadCloser, err error) {
+
+		if err == nil && reader == nil {
+			return
+		}
+		if err != nil {
+			dialog.ShowError(err, u.window)
+			return
+		}
+		u.filename = reader.URI().Path()
+		u.lastDirectory = reader.URI().Scheme() + "://" + filepath.Dir(reader.URI().Path())
+		alert := dialog.NewInformation("loading file", "Please Wait", u.window)
+		alert.Show()
+		xl := xls.XlsFile{}
+		reader.Close()
+		u.ym.Data, err = xl.Get(reader.URI().Path())
+		if err != nil {
+			dialog.ShowError(err, u.window)
+			return
+		}
+		u.ym.NbFrames = uint32(len(u.ym.Data[0]))
+		u.generateChart()
+		u.setFileDescription()
+		//	u.graphicContent.Refresh()
+		alert.Hide()
+
+	}, u.window)
+	uri, err := storage.ParseURI(u.lastDirectory)
+	if err == nil {
+		lister, err := storage.ListerForURI(uri)
+		if err == nil {
+			fd.SetLocation(lister)
+		}
+	}
+	fd.SetFilter(storage.NewExtensionFileFilter([]string{".xls", ".xlsx"}))
+	fd.Resize(dialogSize)
+	fd.Show()
+}
+
 func (u *ui) ExportRegisters() {
 	fd := dialog.NewFolderOpen(func(lister fyne.ListableURI, err error) {
 		if err == nil && lister == nil {
@@ -465,7 +528,7 @@ func (u *ui) ExportRegisters() {
 			return
 		}
 		folderPath := lister.Path()
-		for i := 0; i < 16; i++ {
+		for i := range 16 {
 			filePath := folderPath + string(filepath.Separator) + filepath.Base(u.filename) + ".r" + fmt.Sprintf("%.2d", i)
 			fw, err := os.Create(filePath)
 			if err != nil {
