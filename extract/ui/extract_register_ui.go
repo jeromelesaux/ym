@@ -466,13 +466,16 @@ func (u *ui) ExportExcel() {
 			return
 		}
 
-		filepath := writer.URI().Path()
+		filePath := writer.URI().Path()
+		if filepath.Ext(filePath) != ".xlsx" {
+			filePath += ".xlsx"
+		}
 		xl := xls.XlsFile{}
-		if err := xl.New(filepath, u.ym.Data); err != nil {
+		if err := xl.New(filePath, u.ym.Data); err != nil {
 			dialog.ShowError(err, u.window)
 			return
 		}
-		dialog.ShowInformation("Xlsx file saved", "Your file is saved in ["+filepath+"].", u.window)
+		dialog.ShowInformation("Xlsx file saved", "Your file is saved in ["+filePath+"].", u.window)
 	}, u.window)
 	fd.Resize(dialogSize)
 	fd.Show()
