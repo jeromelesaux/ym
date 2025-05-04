@@ -1,6 +1,6 @@
 module github.com/jeromelesaux/ym
 
-go 1.23.0
+go 1.23.1
 
 toolchain go1.23.5
 

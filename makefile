@@ -3,10 +3,10 @@ RM=rm
 MV=mv
 
 
-SOURCEDIR=./extract
+SOURCEDIR=./yeti
 SOURCES := $(shell find $(SOURCEDIR) -name '*.go')
 
-VERSIONCOMMENT:=$(shell egrep -m1 "Appversion" extract/ui/extract_register_ui.go | cut -d= -f2 | tr -d "\"" | tr " " "_")
+VERSIONCOMMENT:=$(shell egrep -m1 "Appversion" yeti/ui/extract_register_ui.go | cut -d= -f2 | tr -d "\"" | tr " " "_")
 suffix=$(shell grep -m1 "version" *.go | sed 's/[", ]//g' | cut -d= -f2 | sed 's/[0-9.]//g')
 snapshot=$(shell date +%FT%T)
 VERSION="1.0-"$(VERSIONCOMMENT)
@@ -41,7 +41,7 @@ clean:
 	@echo "Cleaning all *.zip archives."
 	rm -f YeTi*.zip
 	@echo "Cleaning all binaries."
-	rm -fr YeTi*
+	rm -fr YeTi-* YeTi.exe
 
 deps: get-linter get-vulncheck
 	@echo "Getting tools..."
