@@ -497,12 +497,12 @@ func (u *ui) ImportExcel() {
 		alert.Show()
 		xl := xls.XlsFile{}
 		reader.Close()
-		u.ym.Data, err = xl.Get(reader.URI().Path())
+		data, err := xl.Get(reader.URI().Path())
 		if err != nil {
 			dialog.ShowError(err, u.window)
 			return
 		}
-		u.ym.NbFrames = uint32(len(u.ym.Data[0]))
+		u.newYM(data)
 		u.generateChart()
 		u.setFileDescription()
 		//	u.graphicContent.Refresh()
@@ -691,4 +691,14 @@ func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
 	archive := lha.NewLha(filePath)
 	lha.GenericFormat = true
 	return archive.CompressBytes(u.archiveFilename, content, u.compressMethod, int(u.headerLevel))
+}
+
+func (u *ui) newYM(data [16][]byte) {
+	u.ym = ym.NewYm()
+	u.ym.FileID = ym.YM1
+	u.ym.Data = data
+	u.ym.NbFrames = uint32(len(u.ym.Data[0]))
+	u.ym.AuthorName = []byte("Yeti")
+	u.ymToSave = u.ym
+
 }
