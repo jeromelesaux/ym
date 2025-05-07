@@ -10,6 +10,17 @@ const (
 	YM_MIX1 = ('M' << 24) | ('I' << 16) | ('X' << 8) | ('1')
 	YMT1    = ('Y' << 24) | ('M' << 16) | ('T' << 8) | ('1')
 	YMT2    = ('Y' << 24) | ('M' << 16) | ('T' << 8) | ('2')
+
+	AMSTRAD_CLOCK       = 1000000
+	ATARI_CLOCK         = 2000000
+	SPECTRUM_CLOCK      = 1773400
+	MFP_CLOCK           = 2457600
+	NOISESIZE           = 16384
+	DRUM_PREC           = 15
+	A_DRUMSIGNED        = 2
+	A_TIMECONTROL       = 8
+	A_STREAMINTERLEAVED = 1
+	Frame44Khz          = 44100
 )
 
 type MixBlock struct {
@@ -57,12 +68,22 @@ type Digidrum struct {
 
 func NewYm() *Ym {
 	y := &Ym{
-		Digidrums:   make([]Digidrum, 0),
-		MixBlock:    make([]MixBlock, 0),
-		TimeInfo:    make([]TimeKey, 0),
-		SongName:    make([]byte, 0),
-		AuthorName:  make([]byte, 0),
-		SongComment: make([]byte, 0),
+		Digidrums:        make([]Digidrum, 0),
+		MixBlock:         make([]MixBlock, 0),
+		TimeInfo:         make([]TimeKey, 0),
+		SongName:         make([]byte, 0),
+		AuthorName:       make([]byte, 0),
+		SongComment:      make([]byte, 0),
+		FileID:           YM1,
+		CheckString:      [8]byte{},
+		NbVoice:          1,
+		TrackerFreqShift: 0,
+		NbFrames:         0,
+		SongAttributes:   0,
+		DigidrumNb:       0,
+		YmMasterClock:    ATARI_CLOCK,
+		FrameHz:          Frame44Khz,
+		EndID:            2717270779, // END
 	}
 	for i := 0; i < 16; i++ {
 		y.Data[i] = make([]byte, 0)
@@ -84,7 +105,7 @@ func CopyYm(ym *Ym) *Ym {
 
 	n.DigidrumNb = ym.DigidrumNb
 	n.Digidrums = make([]Digidrum, ym.DigidrumNb)
-	for i := 0; i < int(ym.DigidrumNb); i++ {
+	for i := range int(ym.DigidrumNb) {
 		n.Digidrums[i].SampleSize = ym.Digidrums[i].SampleSize
 		n.Digidrums[i].RepLen = ym.Digidrums[i].RepLen
 		n.Digidrums[i].SampleData = make([]byte, n.Digidrums[i].SampleSize)
@@ -96,14 +117,14 @@ func CopyYm(ym *Ym) *Ym {
 	n.AuthorName = append(n.AuthorName, ym.AuthorName...)
 
 	n.Size = ym.Size
-	for j := 0; j < 16; j++ {
+	for j := range 16 {
 		n.Data[j] = make([]byte, len(ym.Data[j]))
 		copy(n.Data[j][:], ym.Data[j][:])
 	}
 
 	n.NbMixBlock = ym.NbMixBlock
 	n.MixBlock = make([]MixBlock, ym.NbMixBlock)
-	for i := 0; i < int(ym.NbMixBlock); i++ {
+	for i := range int(ym.NbMixBlock) {
 		n.MixBlock[i].NbRepeat = ym.MixBlock[i].NbRepeat
 		n.MixBlock[i].ReplayFreq = ym.MixBlock[i].ReplayFreq
 		n.MixBlock[i].SampleLength = ym.MixBlock[i].SampleLength
@@ -112,7 +133,7 @@ func CopyYm(ym *Ym) *Ym {
 
 	n.NbTimeKey = ym.NbTimeKey
 	n.TimeInfo = make([]TimeKey, ym.NbTimeKey)
-	for i := 0; i < int(ym.NbTimeKey); i++ {
+	for i := range int(ym.NbTimeKey) {
 		n.TimeInfo[i].Time = ym.TimeInfo[i].Time
 		n.TimeInfo[i].NRepeat = ym.TimeInfo[i].NRepeat
 		n.TimeInfo[i].NBlock = ym.TimeInfo[i].NBlock
@@ -162,7 +183,7 @@ func (y *Ym) Extract(startFrame, endFrame int) *Ym {
 
 	n.DigidrumNb = y.DigidrumNb
 	n.Digidrums = make([]Digidrum, y.DigidrumNb)
-	for i := 0; i < int(y.DigidrumNb); i++ {
+	for i := range int(y.DigidrumNb) {
 		n.Digidrums[i].SampleSize = y.Digidrums[i].SampleSize
 		n.Digidrums[i].SampleData = make([]byte, n.Digidrums[i].SampleSize)
 		copy(n.Digidrums[i].SampleData, y.Digidrums[i].SampleData)
@@ -171,7 +192,7 @@ func (y *Ym) Extract(startFrame, endFrame int) *Ym {
 
 	n.NbMixBlock = y.NbMixBlock
 	n.MixBlock = make([]MixBlock, y.NbMixBlock)
-	for i := 0; i < int(y.NbMixBlock); i++ {
+	for i := range int(y.NbMixBlock) {
 		n.MixBlock[i].NbRepeat = y.MixBlock[i].NbRepeat
 		n.MixBlock[i].ReplayFreq = y.MixBlock[i].ReplayFreq
 		n.MixBlock[i].SampleLength = y.MixBlock[i].SampleLength
@@ -180,7 +201,7 @@ func (y *Ym) Extract(startFrame, endFrame int) *Ym {
 
 	n.NbTimeKey = y.NbTimeKey
 	n.TimeInfo = make([]TimeKey, y.NbTimeKey)
-	for i := 0; i < int(y.NbTimeKey); i++ {
+	for i := range int(y.NbTimeKey) {
 		n.TimeInfo[i].Time = y.TimeInfo[i].Time
 		n.TimeInfo[i].NRepeat = y.TimeInfo[i].NRepeat
 		n.TimeInfo[i].NBlock = y.TimeInfo[i].NBlock
@@ -190,7 +211,7 @@ func (y *Ym) Extract(startFrame, endFrame int) *Ym {
 	n.SongComment = append(n.SongComment, y.SongComment...)
 	n.AuthorName = append(n.AuthorName, y.AuthorName...)
 
-	for j := 0; j < 16; j++ {
+	for j := range 16 {
 		n.Data[j] = make([]byte, endFrame-startFrame)
 		index := 0
 		for i := startFrame; i < endFrame && i < len(y.Data[j]); i++ {
@@ -253,7 +274,7 @@ func (y *Ym) ComputeTime() {
 	//-------------------------------------------
 	y.NbTimeKey = 0
 
-	for i := 0; i < int(y.NbMixBlock); i++ {
+	for i := range int(y.NbMixBlock) {
 		if y.MixBlock[i].NbRepeat >= 32 {
 			y.MixBlock[i].NbRepeat = 32
 		}
@@ -269,7 +290,7 @@ func (y *Ym) ComputeTime() {
 	var time uint32
 
 	for i := 0; i < int(y.NbMixBlock); i++ {
-		for j := 0; j < int(y.MixBlock[i].NbRepeat); j++ {
+		for j := range int(y.MixBlock[i].NbRepeat) {
 			y.TimeInfo[j].Time = time
 			y.TimeInfo[j].NRepeat = (y.MixBlock[i].NbRepeat) - uint16(j)
 			y.TimeInfo[j].NBlock = uint16(i)

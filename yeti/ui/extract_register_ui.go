@@ -311,6 +311,7 @@ func (u *ui) play() {
 	y = currentYm.Extract(u.frameStartSelectedIndex, u.frameEndSelectedIndex)
 	totalTime := float64(y.NbFrames) / float64(y.FrameHz)
 	nbFrames := y.NbFrames
+
 	go func() {
 		for {
 			select {
@@ -617,7 +618,7 @@ func (u *ui) setFileDescription() {
 	desc += fmt.Sprintf("YM format :%s\n", u.ym.FormatType())
 
 	var clock string = "ATARI-ST"
-	if u.ym.YmMasterClock == encoding.AMSTRAD_CLOCK {
+	if u.ym.YmMasterClock == ym.AMSTRAD_CLOCK {
 		clock = "AMSTRAD CPC"
 	}
 	desc += fmt.Sprintf("YM Master clock :%d %s", u.ym.YmMasterClock, clock) + "\n"

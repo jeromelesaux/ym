@@ -16,18 +16,6 @@ var (
 	ErrorFileidDiffers      = errors.New("fileID YM6! differs")
 )
 
-const (
-	AMSTRAD_CLOCK       = 1000000
-	ATARI_CLOCK         = 2000000
-	SPECTRUM_CLOCK      = 1773400
-	MFP_CLOCK           = 2457600
-	NOISESIZE           = 16384
-	DRUM_PREC           = 15
-	A_DRUMSIGNED        = 2
-	A_TIMECONTROL       = 8
-	A_STREAMINTERLEAVED = 1
-)
-
 func Unmarshall(data []byte, y *ym.Ym) error {
 	r := bytes.NewReader(data)
 	if err := binary.Read(r, binary.BigEndian, &y.FileID); err != nil {
@@ -44,16 +32,16 @@ func Unmarshall(data []byte, y *ym.Ym) error {
 		return ErrorCheckstringDiffers
 	}
 	if y.FileID == ym.YMT1 || y.FileID == ym.YMT2 {
-		if err := umarshallYmTracker(r, data, y); err != nil {
+		if err := umarshallYmTracker(r, y); err != nil {
 			return err
 		}
 	} else {
 		if y.FileID == ym.YM_MIX1 {
-			if err := umarshallYmMix(r, data, y); err != nil {
+			if err := umarshallYmMix(r, y); err != nil {
 				return err
 			}
 		} else {
-			if err := umarshallYm(r, data, y); err != nil {
+			if err := umarshallYm(r, y); err != nil {
 				return err
 			}
 		}
@@ -100,7 +88,7 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 		return b.Bytes(), err
 	}
 	if y.DigidrumNb > 0 {
-		for i := 0; i < int(y.DigidrumNb); i++ {
+		for i := range int(y.DigidrumNb) {
 			if err := binary.Write(&b, binary.BigEndian, &y.Digidrums[i].SampleSize); err != nil {
 				return b.Bytes(), err
 			}
@@ -137,8 +125,8 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 	}
 	var err error
 
-	for j := 0; j < 16; j++ {
-		for i := 0; i < int(y.NbFrames); i++ {
+	for j := range 16 {
+		for i := range int(y.NbFrames) {
 			err = b.WriteByte(y.Data[j][i])
 			//fmt.Fprintf(os.Stderr, "j:%d,i:%d:%d\n", j, i, y.Data[j][i])
 			if err != nil {
@@ -193,14 +181,14 @@ func writeRegister(v byte, index int) byte {
 }
 
 // nolint: funlen, gocognit
-func umarshallYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
+func umarshallYm(r *bytes.Reader, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.NbFrames); err != nil {
 		return err
 	}
 	if err := binary.Read(r, binary.BigEndian, &y.SongAttributes); err != nil {
 		return err
 	}
-	y.SongAttributes |= A_TIMECONTROL
+	y.SongAttributes |= ym.A_TIMECONTROL
 	if err := binary.Read(r, binary.BigEndian, &y.DigidrumNb); err != nil {
 		return err
 	}
@@ -279,10 +267,10 @@ func umarshallYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	for i := 0; i < 16; i++ {
 		y.Data[i] = make([]byte, y.NbFrames+1)
 	}
-	if y.SongAttributes&A_STREAMINTERLEAVED != 0 {
+	if y.SongAttributes&ym.A_STREAMINTERLEAVED != 0 {
 
-		for j := 0; j < 16; j++ {
-			for i := 0; i < int(y.NbFrames); i++ {
+		for j := range 16 {
+			for i := range int(y.NbFrames) {
 				v, err := r.ReadByte()
 				y.Data[j][i] = v // writeRegister(v, j)
 				if err != nil {
@@ -291,8 +279,8 @@ func umarshallYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 			}
 		}
 	} else {
-		for i := 0; i < int(y.NbFrames); i++ {
-			for j := 0; j < 16; j++ {
+		for i := range int(y.NbFrames) {
+			for j := range 16 {
 				v, err := r.ReadByte()
 				y.Data[j][i] = v // writeRegister(v, j)
 				if err != nil {
@@ -305,7 +293,7 @@ func umarshallYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 }
 
 // nolint: funlen, gocognit
-func umarshallYmTracker(r *bytes.Reader, data []byte, y *ym.Ym) error {
+func umarshallYmTracker(r *bytes.Reader, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.NbVoice); err != nil {
 		return err
 	}
@@ -367,7 +355,7 @@ func umarshallYmTracker(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	}
 	if y.DigidrumNb > 0 {
 		y.Digidrums = make([]ym.Digidrum, y.DigidrumNb)
-		for i := 0; i < int(y.DigidrumNb); i++ {
+		for i := range int(y.DigidrumNb) {
 			d := ym.Digidrum{}
 			var v uint16
 			if err := binary.Read(r, binary.BigEndian, &v); err != nil {
@@ -400,12 +388,12 @@ func umarshallYmTracker(r *bytes.Reader, data []byte, y *ym.Ym) error {
 
 		}
 	}
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		y.Data[i] = make([]byte, y.NbFrames+1)
 	}
 
-	for j := 0; j < 16; j++ {
-		for i := 0; i < int(y.NbFrames); i++ {
+	for j := range 16 {
+		for i := range int(y.NbFrames) {
 			v, err := r.ReadByte()
 			y.Data[j][i] = v // writeRegister(v, j)
 			if err != nil {
@@ -418,13 +406,13 @@ func umarshallYmTracker(r *bytes.Reader, data []byte, y *ym.Ym) error {
 
 func umarshallLegacyYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	y.NbFrames = uint32((len(data) - 4) / 14)
-	y.YmMasterClock = ATARI_CLOCK
+	y.YmMasterClock = ym.ATARI_CLOCK
 	y.FrameHz = 50
-	for j := 0; j < 16; j++ {
+	for j := range 16 {
 		y.Data[j] = make([]byte, y.NbFrames)
 	}
-	for j := 0; j < 14; j++ {
-		for i := 0; i < int(y.NbFrames); i++ {
+	for j := range 14 {
+		for i := range int(y.NbFrames) {
 			v, err := r.ReadByte()
 			y.Data[j][i] = v
 			if err != nil {
@@ -436,12 +424,12 @@ func umarshallLegacyYm(r *bytes.Reader, data []byte, y *ym.Ym) error {
 }
 
 // nolint: funlen, gocognit
-func umarshallYmMix(r *bytes.Reader, data []byte, y *ym.Ym) error {
+func umarshallYmMix(r *bytes.Reader, y *ym.Ym) error {
 	if err := binary.Read(r, binary.BigEndian, &y.SongAttributes); err != nil {
 		return err
 	}
 	if y.SongAttributes&1 != 0 {
-		y.SongAttributes = A_DRUMSIGNED
+		y.SongAttributes = ym.A_DRUMSIGNED
 	}
 	var sampleSize uint32
 	if err := binary.Read(r, binary.BigEndian, &sampleSize); err != nil {
@@ -453,7 +441,7 @@ func umarshallYmMix(r *bytes.Reader, data []byte, y *ym.Ym) error {
 	}
 
 	y.MixBlock = make([]ym.MixBlock, 0)
-	for i := 0; i < int(y.NbMixBlock); i++ {
+	for range int(y.NbMixBlock) {
 		m := ym.MixBlock{}
 		if err := binary.Read(r, binary.BigEndian, &m.SampleStart); err != nil {
 			return err
@@ -509,30 +497,30 @@ func umarshallYmMix(r *bytes.Reader, data []byte, y *ym.Ym) error {
 		}
 	}
 
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		y.Data[i] = make([]byte, y.NbFrames)
 	}
 
-	for j := 0; j < 16; j++ {
-		for i := 0; i < int(y.NbFrames); i++ {
+	for j := range 16 {
+		for i := range int(y.NbFrames) {
 			v, err := r.ReadByte()
 			y.Data[j][i] = v // writeRegister(v, j)
 			if err != nil {
-				y.SongAttributes |= A_TIMECONTROL
+				y.SongAttributes |= ym.A_TIMECONTROL
 				y.ComputeTime()
 				return err
 			}
 		}
 	}
-	if y.SongAttributes&A_DRUMSIGNED != 0 {
-		for j := 0; j < 16; j++ {
-			for i := 0; i < int(y.NbFrames); i++ {
+	if y.SongAttributes&ym.A_DRUMSIGNED != 0 {
+		for j := range 16 {
+			for i := range int(y.NbFrames) {
 				y.Data[j][i] ^= 0x80
 			}
 		}
-		y.SongAttributes = A_DRUMSIGNED
+		y.SongAttributes = ym.A_DRUMSIGNED
 	}
-	y.SongAttributes |= A_TIMECONTROL
+	y.SongAttributes |= ym.A_TIMECONTROL
 	y.ComputeTime()
 	return nil
 }

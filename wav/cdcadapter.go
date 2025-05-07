@@ -21,7 +21,7 @@ func (c *CDcAdjuster) AddSample(sample int32) {
 
 }
 func (c *CDcAdjuster) Reset() {
-	for i := 0; i < DC_ADJUST_BUFFERLEN; i++ {
+	for i := range DC_ADJUST_BUFFERLEN {
 		c.buffer[i] = 0
 	}
 	c.pos = 0

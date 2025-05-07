@@ -120,22 +120,22 @@ func NewYMMusic() *YMMusic {
 		pDrumTab:             make([]ym.Digidrum, 0),
 		ymTrackerVolumeTable: make([]int16, 256*64),
 		playerRate:           50,
-		replayRate:           44100,
+		replayRate:           ym.Frame44Khz,
 		pTimeInfo:            make([]ym.TimeKey, 0),
 		ymTrackerVoice:       make([]ymTrackerVoice, MAX_VOICE),
-		ymChip:               NewCYm2149Ex(encoding.ATARI_CLOCK, 1, 44100),
+		ymChip:               NewCYm2149Ex(ym.ATARI_CLOCK, 1, ym.Frame44Khz),
 	}
 }
 
 func (y *YMMusic) trackerInit(volMaxPercent int32) {
-	for i := 0; i < MAX_VOICE; i++ {
+	for i := range MAX_VOICE {
 		y.ymTrackerVoice[i].bRunning = false
 	}
 	y.ymTrackerNbSampleBefore = 0
 	scale := (256 * volMaxPercent) / int32(y.nbVoice*100)
 	// Construit la table de volume.
 	index := 0
-	for vol := 0; vol < 64; vol++ {
+	for vol := range 64 {
 		for s := -128; s < 128; s++ {
 			y.ymTrackerVolumeTable[index] = int16((s * int(scale) * vol) / 64)
 			index++
@@ -159,7 +159,7 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 	y.nbFrame = int(v.NbFrames)
 	y.nbDrum = int(v.DigidrumNb)
 	y.pDrumTab = make([]ym.Digidrum, v.DigidrumNb)
-	for i := 0; i < y.nbDrum; i++ {
+	for i := range y.nbDrum {
 		y.pDrumTab[i].SampleData = make([]byte, len(v.Digidrums[i].SampleData))
 		copy(y.pDrumTab[i].SampleData, v.Digidrums[i].SampleData)
 		y.pDrumTab[i].SampleSize = v.Digidrums[i].SampleSize
@@ -168,7 +168,7 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 
 	y.nbMixBlock = int32(v.NbMixBlock)
 	y.pMixBlock = make([]ym.MixBlock, y.nbMixBlock)
-	for i := 0; i < int(y.nbMixBlock); i++ {
+	for i := range int(y.nbMixBlock) {
 		y.pMixBlock[i].NbRepeat = v.MixBlock[i].NbRepeat
 		y.pMixBlock[i].ReplayFreq = v.MixBlock[i].ReplayFreq
 		y.pMixBlock[i].SampleLength = v.MixBlock[i].SampleLength
@@ -177,7 +177,7 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 
 	y.nbTimeKey = v.NbTimeKey
 	y.pTimeInfo = make([]ym.TimeKey, y.nbTimeKey)
-	for i := 0; i < int(y.nbTimeKey); i++ {
+	for i := range int(y.nbTimeKey) {
 		y.pTimeInfo[i].Time = v.TimeInfo[i].Time
 		y.pTimeInfo[i].NRepeat = v.TimeInfo[i].NRepeat
 		y.pTimeInfo[i].NBlock = v.TimeInfo[i].NBlock
@@ -208,9 +208,9 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 		y.SongType = YM_V6
 	}
 
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		y.pDataStream[i] = make([]byte, y.nbFrame)
-		for j := 0; j < y.nbFrame; j++ {
+		for j := range y.nbFrame {
 			y.pDataStream[i][j] = v.Data[i][j]
 		}
 	}
@@ -218,8 +218,8 @@ func (y *YMMusic) LoadMemory(v *ym.Ym) error {
 	if y.SongType == YM_MIX1 {
 		y.pBigSampleBuffer = make([]byte, 16*y.nbFrame)
 		var index int
-		for i := 0; i < 16; i++ {
-			for j := 0; j < y.nbFrame; j++ {
+		for i := range 16 {
+			for j := range y.nbFrame {
 				y.pBigSampleBuffer[index] = y.pDataStream[i][j]
 				index++
 			}
@@ -299,9 +299,9 @@ func (y *YMMusic) Wave() ([]byte, error) {
 	head.FormLength = 0x10
 	head.SampleFormat = 1
 	head.NumChannels = 1
-	head.PlayRate = 44100
+	head.PlayRate = ym.Frame44Khz
 	head.BitsPerSample = 16
-	head.BytesPerSec = 44100 * (16 / 8)
+	head.BytesPerSec = ym.Frame44Khz * (16 / 8)
 	head.Pad = (16 / 8)
 	head.DataLength = uint32(totalNbSample) * (16 / 8)
 	head.FileLength = head.DataLength + 44 - 8 // 44 sizeof waveheader
@@ -327,7 +327,7 @@ func (y *YMMusic) WaveFile(wavFilepath string) error {
 	}
 	y.bLoop = false
 	totalNbSample := 0
-	nbTotal := y.MusicTimeInSec * 44100
+	nbTotal := y.MusicTimeInSec * ym.Frame44Khz
 	oldRatio := -1
 	convertBuffer := make([]int16, 1024)
 
@@ -359,9 +359,9 @@ func (y *YMMusic) WaveFile(wavFilepath string) error {
 	head.FormLength = 0x10
 	head.SampleFormat = 1
 	head.NumChannels = 1
-	head.PlayRate = 44100
+	head.PlayRate = ym.Frame44Khz
 	head.BitsPerSample = 16
-	head.BytesPerSec = 44100 * (16 / 8)
+	head.BytesPerSec = ym.Frame44Khz * (16 / 8)
 	head.Pad = (16 / 8)
 	head.DataLength = uint32(totalNbSample) * (16 / 8)
 	head.FileLength = head.DataLength + 44 - 8 // 44 sizeof waveheader
@@ -449,7 +449,7 @@ var pLineFrame int
 func (y *YMMusic) ymTrackerPlayer(pVoice *[]ymTrackerVoice) {
 	pLineFrame = y.currentFrame
 	pLine := y.getTrackerLine()
-	for i := 0; i < y.nbVoice; i++ {
+	for i := range y.nbVoice {
 		var n int32
 		(*pVoice)[i].sampleFreq = (uint32(pLine.freqHigh) << 8) | uint32(pLine.freqLow)
 		if (*pVoice)[i].sampleFreq != 0 {
@@ -541,7 +541,7 @@ func (y *YMMusic) TrackerUpdate(pBuffer *[]int16, nbSample int32) {
 	var nbs int32
 	var pBufferIndex int
 
-	for i := 0; i < int(nbSample); i++ {
+	for i := range int(nbSample) {
 		(*pBuffer)[i] = 0
 	}
 	if y.bMusicOver {

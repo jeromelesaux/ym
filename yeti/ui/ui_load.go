@@ -26,7 +26,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.ymCpc = cpc.NewCpcYM()
 	u.archiveFilename = "archive.ym"
 
-	format := beep.Format{SampleRate: 44100}
+	format := beep.Format{SampleRate: ym.Frame44Khz}
 	err := speaker.Init(format.SampleRate, format.SampleRate.N(time.Second/10))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error while initialising speaker : %v\n", err)
@@ -155,7 +155,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.graphic = w2.NewClickableImage(u.Tapped, nil)
 	u.generateChart()
 	// nolint: staticcheck
-	u.graphicContent = container.New(layout.NewMaxLayout(), u.graphic)
+	u.graphicContent = container.New(layout.NewStackLayout(), u.graphic)
 	//u.graphicContent = container.NewContainerWithLayout(layout.NewMaxLayout())
 
 	u.window = app.NewWindow("YeTi")

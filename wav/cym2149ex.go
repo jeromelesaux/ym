@@ -66,22 +66,22 @@ func NewCYm2149Ex(masterClock uint32, prediv int32, playRate uint32) *CYm2149Ex 
 		dcAdjust: NewCDcAdjuster(),
 	}
 	c.envData = make([][][]byte, 16)
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		c.envData[i] = make([][]byte, 2)
-		for j := 0; j < 2; j++ {
+		for j := range 2 {
 			c.envData[i][j] = make([]byte, 16*2)
 		}
 
 	}
 
 	if ymVolumeTable[15] == 32767 {
-		for i := 0; i < 16; i++ {
+		for i := range 16 {
 			ymVolumeTable[i] = (ymVolumeTable[i] * 2) / 6
 		}
 	}
 	for env := 0; env < 16; env++ {
 		pse := EnvWave[env]
-		for phase := 0; phase < 2; phase++ {
+		for phase := range 2 {
 			c.ym2149EnvInit(env, 0, phase, pse[phase*2+0], pse[phase*2+1])
 		}
 		for phase := 2; phase < 4; phase++ {
@@ -96,7 +96,7 @@ func NewCYm2149Ex(masterClock uint32, prediv int32, playRate uint32) *CYm2149Ex 
 }
 
 func (c *CYm2149Ex) reset() {
-	for i := 0; i < 14; i++ {
+	for i := range 14 {
 		c.writeRegister(int32(i), 0)
 	}
 	c.writeRegister(7, 0xff)
@@ -464,7 +464,7 @@ func (c *CYm2149Ex) ym2149EnvInit(index0, index1, indexStart int, a, b int32) by
 	d := b - a
 	a *= 15
 	var pEnvIndex int = 16 * indexStart
-	for i := 0; i < 16; i++ {
+	for range 16 {
 		c.envData[index0][index1][pEnvIndex] = byte(a)
 		//(*pEnv)[pEnvIndex] = byte(a)
 		pEnvIndex++
