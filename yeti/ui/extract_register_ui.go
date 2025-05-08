@@ -696,10 +696,9 @@ func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
 
 func (u *ui) newYM(data [16][]byte) {
 	u.ym = ym.NewYm()
-	u.ym.FileID = ym.YM1
 	u.ym.Data = data
 	u.ym.NbFrames = uint32(len(u.ym.Data[0]))
-	u.ym.AuthorName = []byte("Yeti")
+	u.compressMethod = 5
 	u.ymToSave = u.ym
 
 }

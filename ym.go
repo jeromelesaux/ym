@@ -82,7 +82,7 @@ func NewYm() *Ym {
 		SongAttributes:   0,
 		DigidrumNb:       0,
 		YmMasterClock:    ATARI_CLOCK,
-		FrameHz:          Frame44Khz,
+		FrameHz:          50,
 		EndID:            2717270779, // END
 	}
 	for i := 0; i < 16; i++ {
