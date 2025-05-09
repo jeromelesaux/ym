@@ -85,7 +85,7 @@ func NewYm() *Ym {
 		FrameHz:          50,
 		EndID:            2717270779, // END
 	}
-	for i := 0; i < 16; i++ {
+	for i := range 16 {
 		y.Data[i] = make([]byte, 0)
 	}
 	copy(y.CheckString[:], []byte("LeOnArD!"))

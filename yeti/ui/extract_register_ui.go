@@ -676,8 +676,10 @@ func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
 	writer.Close()
 	os.Remove(filePath)
 	// force to last version YM
-	if u.ymToSave.FileID != ym.YM6 {
-		u.ymToSave.FileID = ym.YM6
+	if u.ymToSave.FileID != ym.YM1 {
+		if u.ymToSave.FileID != ym.YM6 {
+			u.ymToSave.FileID = ym.YM6
+		}
 	}
 
 	// check if the ymTosave is not empty

@@ -63,71 +63,78 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 	if err := binary.Write(&b, binary.BigEndian, &y.FileID); err != nil {
 		return b.Bytes(), err
 	}
-	if err := binary.Write(&b, binary.BigEndian, &y.CheckString); err != nil {
-		return b.Bytes(), err
-	}
 	if y.FileID > ym.YM1 {
-		if err := binary.Write(&b, binary.BigEndian, &y.NbFrames); err != nil {
+		if err := binary.Write(&b, binary.BigEndian, &y.CheckString); err != nil {
 			return b.Bytes(), err
 		}
-		if err := binary.Write(&b, binary.BigEndian, &y.SongAttributes); err != nil {
-			return b.Bytes(), err
-		}
-		if err := binary.Write(&b, binary.BigEndian, &y.DigidrumNb); err != nil {
-			return b.Bytes(), err
-		}
-		if err := binary.Write(&b, binary.BigEndian, &y.YmMasterClock); err != nil {
-			return b.Bytes(), err
-		}
-		if err := binary.Write(&b, binary.BigEndian, &y.FrameHz); err != nil {
-			return b.Bytes(), err
-		}
-		if err := binary.Write(&b, binary.BigEndian, &y.LoopFrame); err != nil {
-			return b.Bytes(), err
-		}
-		if err := binary.Write(&b, binary.BigEndian, &y.Size); err != nil {
-			return b.Bytes(), err
-		}
-		if y.DigidrumNb > 0 {
-			for i := range int(y.DigidrumNb) {
-				if err := binary.Write(&b, binary.BigEndian, &y.Digidrums[i].SampleSize); err != nil {
-					return b.Bytes(), err
-				}
-				if err := binary.Write(&b, binary.BigEndian, &y.Digidrums[i].SampleData); err != nil {
-					return b.Bytes(), err
+		if y.FileID > ym.YM1 {
+			if err := binary.Write(&b, binary.BigEndian, &y.NbFrames); err != nil {
+				return b.Bytes(), err
+			}
+			if err := binary.Write(&b, binary.BigEndian, &y.SongAttributes); err != nil {
+				return b.Bytes(), err
+			}
+			if err := binary.Write(&b, binary.BigEndian, &y.DigidrumNb); err != nil {
+				return b.Bytes(), err
+			}
+			if err := binary.Write(&b, binary.BigEndian, &y.YmMasterClock); err != nil {
+				return b.Bytes(), err
+			}
+			if err := binary.Write(&b, binary.BigEndian, &y.FrameHz); err != nil {
+				return b.Bytes(), err
+			}
+			if err := binary.Write(&b, binary.BigEndian, &y.LoopFrame); err != nil {
+				return b.Bytes(), err
+			}
+			if err := binary.Write(&b, binary.BigEndian, &y.Size); err != nil {
+				return b.Bytes(), err
+			}
+			if y.DigidrumNb > 0 {
+				for i := range int(y.DigidrumNb) {
+					if err := binary.Write(&b, binary.BigEndian, &y.Digidrums[i].SampleSize); err != nil {
+						return b.Bytes(), err
+					}
+					if err := binary.Write(&b, binary.BigEndian, &y.Digidrums[i].SampleData); err != nil {
+						return b.Bytes(), err
+					}
 				}
 			}
-		}
 
-		if err := binary.Write(&b, binary.BigEndian, &y.SongName); err != nil {
-			return b.Bytes(), err
-		}
-		var eos byte = 0 // end of string (c compliant)
-		if len(y.SongName) == 0 || y.SongName[len(y.SongName)-1] != 0 {
-			if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+			if err := binary.Write(&b, binary.BigEndian, &y.SongName); err != nil {
 				return b.Bytes(), err
 			}
-		}
-		if err := binary.Write(&b, binary.BigEndian, &y.AuthorName); err != nil {
-			return b.Bytes(), err
-		}
-		if len(y.AuthorName) == 0 || y.AuthorName[len(y.AuthorName)-1] != 0 {
-			if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+			var eos byte = 0 // end of string (c compliant)
+			if len(y.SongName) == 0 || y.SongName[len(y.SongName)-1] != 0 {
+				if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+					return b.Bytes(), err
+				}
+			}
+			if err := binary.Write(&b, binary.BigEndian, &y.AuthorName); err != nil {
 				return b.Bytes(), err
 			}
-		}
-		if err := binary.Write(&b, binary.BigEndian, &y.SongComment); err != nil {
-			return b.Bytes(), err
-		}
-		if len(y.SongComment) == 0 || y.SongComment[len(y.SongComment)-1] != 0 {
-			if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+			if len(y.AuthorName) == 0 || y.AuthorName[len(y.AuthorName)-1] != 0 {
+				if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+					return b.Bytes(), err
+				}
+			}
+			if err := binary.Write(&b, binary.BigEndian, &y.SongComment); err != nil {
 				return b.Bytes(), err
+			}
+			if len(y.SongComment) == 0 || y.SongComment[len(y.SongComment)-1] != 0 {
+				if err := binary.Write(&b, binary.BigEndian, eos); err != nil {
+					return b.Bytes(), err
+				}
 			}
 		}
 	}
 	var err error
 
-	for j := range 16 {
+	var register = 16
+	if y.FileID == ym.YM1 {
+		register = 14
+	}
+
+	for j := range register {
 		for i := range int(y.NbFrames) {
 			err = b.WriteByte(y.Data[j][i])
 			//fmt.Fprintf(os.Stderr, "j:%d,i:%d:%d\n", j, i, y.Data[j][i])
