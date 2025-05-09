@@ -74,7 +74,7 @@ func NewYm() *Ym {
 		SongName:         make([]byte, 0),
 		AuthorName:       make([]byte, 0),
 		SongComment:      make([]byte, 0),
-		FileID:           YM1,
+		FileID:           YM2,
 		CheckString:      [8]byte{},
 		NbVoice:          1,
 		TrackerFreqShift: 0,
