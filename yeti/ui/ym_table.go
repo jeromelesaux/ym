@@ -86,3 +86,31 @@ func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 		Height: 20,
 	})
 }
+
+func (u *ui) putInFrameCache(start, end int) {
+
+	if u.ym.NbFrames <= uint32(end) {
+		return
+	}
+
+	for i := range 16 {
+		u.frameCache[i] = make([]byte, end-start)
+		u.frameCache[i] = append(u.frameCache[i], u.ym.Data[i][start:end]...)
+	}
+}
+
+func (u *ui) copyAfterFrame(v int) {
+	for i := range 16 {
+		u.ym.Data[i] = append(u.ym.Data[i][v:], u.frameCache[i]...)
+	}
+	u.ym.NbFrames = uint32(len(u.ym.Data[0]))
+	u.table.Refresh()
+}
+
+func (u *ui) suppressFrame(start, end int) {
+	for i := range 16 {
+		u.ym.Data[i] = append(u.ym.Data[i][0:start], u.ym.Data[i][end:]...)
+	}
+	u.ym.NbFrames = uint32(len(u.ym.Data[0]))
+	u.table.Refresh()
+}

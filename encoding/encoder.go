@@ -63,7 +63,7 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 	if err := binary.Write(&b, binary.BigEndian, &y.FileID); err != nil {
 		return b.Bytes(), err
 	}
-	if y.FileID > ym.YM3 {
+	if y.FileID > ym.YM4 {
 		if err := binary.Write(&b, binary.BigEndian, &y.CheckString); err != nil {
 			return b.Bytes(), err
 		}
@@ -143,7 +143,7 @@ func Marshall(y *ym.Ym) ([]byte, error) {
 		}
 	}
 
-	if y.FileID >= ym.YM3 {
+	if y.FileID > ym.YM4 {
 		//ymEoF := []byte("End!")
 		if y.EndID != 2717270779 {
 			y.EndID = 2717270779

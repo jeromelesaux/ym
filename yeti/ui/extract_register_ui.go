@@ -71,6 +71,7 @@ type ui struct {
 	playerIsPlaying   bool
 	playerProgression *widget.ProgressBar
 	currentFrame      int
+	frameCache        [16][]byte
 }
 
 func (u *ui) getCurrentYM() *ym.Ym {
