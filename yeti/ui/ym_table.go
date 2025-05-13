@@ -3,9 +3,11 @@ package ui
 import (
 	"fmt"
 	"os"
+	"slices"
 	"strconv"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
@@ -93,24 +95,26 @@ func (u *ui) putInFrameCache(start, end int) {
 		return
 	}
 
+	u.frameCache = [16][]byte{}
 	for i := range 16 {
-		u.frameCache[i] = make([]byte, end-start)
 		u.frameCache[i] = append(u.frameCache[i], u.ym.Data[i][start:end]...)
 	}
 }
 
 func (u *ui) copyAfterFrame(v int) {
 	for i := range 16 {
-		u.ym.Data[i] = append(u.ym.Data[i][v:], u.frameCache[i]...)
+		u.ym.Data[i] = slices.Insert(u.ym.Data[i], v, u.frameCache[i]...)
 	}
 	u.ym.NbFrames = uint32(len(u.ym.Data[0]))
 	u.table.Refresh()
+	canvas.Refresh(u.table)
 }
 
 func (u *ui) suppressFrame(start, end int) {
 	for i := range 16 {
-		u.ym.Data[i] = append(u.ym.Data[i][0:start], u.ym.Data[i][end:]...)
+		u.ym.Data[i] = slices.Delete(u.ym.Data[i], start, end)
 	}
 	u.ym.NbFrames = uint32(len(u.ym.Data[0]))
 	u.table.Refresh()
+	canvas.Refresh(u.table)
 }

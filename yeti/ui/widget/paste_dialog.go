@@ -55,4 +55,5 @@ func (c *PasteDialog) apply() {
 	if c.onClosed != nil {
 		c.onClosed(int(startFrame))
 	}
+	c.Hide()
 }

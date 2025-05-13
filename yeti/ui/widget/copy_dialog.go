@@ -69,4 +69,5 @@ func (c *CopyDialog) apply() {
 	if c.onClosed != nil {
 		c.onClosed(int(startFrame), int(endFrame))
 	}
+	c.Hide()
 }

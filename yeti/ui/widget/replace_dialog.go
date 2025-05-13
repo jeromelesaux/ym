@@ -82,4 +82,5 @@ func (r *ReplaceDialog) apply() {
 			int(r.suppress.From),
 			int(r.suppress.To))
 	}
+	r.Hide()
 }

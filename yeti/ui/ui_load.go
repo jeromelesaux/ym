@@ -69,6 +69,21 @@ func (u *ui) LoadUI(app fyne.App) {
 	gotToFrameEntry := widget.NewEntry()
 	gotToFrameEntry.OnSubmitted = u.goToFrame
 
+	copy := widget.NewButtonWithIcon("Copy", theme.ContentCopyIcon(), func() {
+		d := w2.NewCopyDialog(u.putInFrameCache, u.window)
+		d.Show()
+	})
+
+	paste := widget.NewButtonWithIcon("Paste", theme.ContentPasteIcon(), func() {
+		d := w2.NewPasteDialog(u.copyAfterFrame, u.window)
+		d.Show()
+	})
+
+	suppress := widget.NewButtonWithIcon("Suppress", theme.ContentClearIcon(), func() {
+		d := w2.NewReplaceDialog(u.suppressFrame, u.window)
+		d.Show()
+	})
+
 	/* registers check boxes selection */
 	var registersSelectionCheckedButton = make([]*widget.Check, 17)
 	type registerCheckFunc func(bool)
@@ -131,9 +146,12 @@ func (u *ui) LoadUI(app fyne.App) {
 		layout.NewGridLayoutWithRows(3),
 		u.playerProgression,
 		container.New(
-			layout.NewGridLayoutWithColumns(5),
+			layout.NewGridLayoutWithColumns(8),
 			goToFrameLabel,
 			gotToFrameEntry,
+			copy,
+			paste,
+			suppress,
 			displayChangementsButton,
 			returnToOriginalButton,
 			cleanButton,
