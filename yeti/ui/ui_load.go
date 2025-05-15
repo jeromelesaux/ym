@@ -185,7 +185,7 @@ func (u *ui) LoadUI(app fyne.App) {
 		container.New(
 			layout.NewGridLayoutWithRows(2),
 			container.New(
-				layout.NewGridLayoutWithRows(3),
+				layout.NewGridLayoutWithRows(4),
 				container.New(
 					layout.NewGridLayoutWithColumns(2),
 					container.NewVScroll(
@@ -205,17 +205,18 @@ func (u *ui) LoadUI(app fyne.App) {
 							importExcel,
 							exportExcel,
 							container.New(
-								layout.NewGridLayoutWithColumns(3),
-								u.playerTime,
+								layout.NewGridLayoutWithColumns(2),
 								playButton,
 								stopButton,
 							),
 						),
 					),
 				),
+				u.playerTime,
 				u.graphicContent,
 				container.New(
 					layout.NewGridLayoutWithRows(1),
+
 					selectionLayout,
 				)),
 
