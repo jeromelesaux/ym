@@ -40,7 +40,7 @@ func (u *ui) LoadUI(app fyne.App) {
 
 	playButton := widget.NewButtonWithIcon("Play", theme.MediaPlayIcon(), u.play)
 	stopButton := widget.NewButtonWithIcon("Stop", theme.MediaStopIcon(), u.stop)
-	u.playerTime = widget.NewLabel("Time:")
+	u.playerTime = widget.NewLabel("Time:\n\n")
 
 	openButton := widget.NewButton("File Open ym file (.ym)", u.OpenFileAction)
 	openButton.Resize(fyne.Size{Height: 1, Width: 50})
@@ -185,7 +185,7 @@ func (u *ui) LoadUI(app fyne.App) {
 		container.New(
 			layout.NewGridLayoutWithRows(2),
 			container.New(
-				layout.NewGridLayoutWithRows(4),
+				layout.NewGridLayoutWithRows(3),
 				container.New(
 					layout.NewGridLayoutWithColumns(2),
 					container.NewVScroll(
@@ -194,25 +194,33 @@ func (u *ui) LoadUI(app fyne.App) {
 							container.NewVScroll(u.fileDescription),
 						)),
 					container.New(
-						layout.NewGridLayoutWithColumns(2),
-						container.New(layout.NewGridLayoutWithRows(3),
-							openButton,
-							saveButton,
-							exportRegisters,
-						),
+						layout.NewVBoxLayout(),
 						container.New(
-							layout.NewGridLayoutWithRows(3),
-							importExcel,
-							exportExcel,
+							layout.NewGridLayoutWithColumns(2),
+							container.New(layout.NewGridLayoutWithRows(3),
+								openButton,
+								saveButton,
+								exportRegisters,
+							),
 							container.New(
-								layout.NewGridLayoutWithColumns(2),
-								playButton,
-								stopButton,
+								layout.NewGridLayoutWithRows(3),
+								importExcel,
+								exportExcel,
+								container.New(
+									layout.NewGridLayoutWithColumns(2),
+									playButton,
+									stopButton,
+								),
 							),
 						),
+						u.playerTime,
 					),
 				),
-				u.playerTime,
+				// container.New(
+				// 	layout.NewVBoxLayout(),
+				// 	u.playerTime,
+				// ),
+
 				u.graphicContent,
 				container.New(
 					layout.NewGridLayoutWithRows(1),
