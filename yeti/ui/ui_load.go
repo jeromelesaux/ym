@@ -177,6 +177,10 @@ func (u *ui) LoadUI(app fyne.App) {
 	//u.graphicContent = container.NewContainerWithLayout(layout.NewMaxLayout())
 
 	u.window = app.NewWindow("YeTi")
+
+	u.playerTimeChan = make(chan bool)
+	u.speakerDone = make(chan bool)
+
 	u.window.SetContent(
 		container.New(
 			layout.NewGridLayoutWithRows(2),

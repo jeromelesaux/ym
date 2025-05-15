@@ -48,11 +48,12 @@ func (ci *ClickableImage) TappedSecondary(pe *fyne.PointEvent) {
 
 func (ci *ClickableImage) SetImage(img image.Image) {
 	ci.image.Image = img
-	width := img.Bounds().Max.X
-	height := img.Bounds().Max.Y
+	//	width := img.Bounds().Max.X
+	//	height := img.Bounds().Max.Y
 
-	ci.image.SetMinSize(
-		fyne.NewSize(float32(width), float32(height)))
+	//ci.image.SetMinSize(
+	//	fyne.NewSize(float32(width), float32(height)))
+	//ci.image.FillMode = canvas.ImageFillContain
 	ci.image.Refresh()
 	//ci.ExtendBaseWidget(ci)
 	//ci.Refresh()

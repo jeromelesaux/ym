@@ -304,7 +304,6 @@ func (u *ui) play() {
 		return
 	}
 
-	u.playerTimeChan = make(chan bool)
 	u.playerTimeTicker = time.NewTicker(time.Millisecond * 10)
 	u.playerTimeValue = 0
 	u.playerIsPlaying = true
@@ -318,22 +317,28 @@ func (u *ui) play() {
 			select {
 			case <-u.playerTimeChan:
 				u.playerIsPlaying = false
-				u.playerProgression.SetValue(0)
-				u.playerTime.SetText(u.playerTime.Text + "\nPlayer stopped.")
-				u.table.Select(widget.TableCellID{Row: u.currentFrame, Col: 0})
+				fyne.DoAndWait(func() {
+					u.playerProgression.SetValue(0)
+					u.playerTime.SetText(u.playerTime.Text + "\nPlayer stopped.")
+					u.table.Select(widget.TableCellID{Row: u.currentFrame, Col: 0})
+				})
 				return
 			case <-u.playerTimeTicker.C:
 				u.playerTimeValue += .01
 				u.currentFrame = int(u.playerTimeValue / totalTime * float64(nbFrames))
-				//u.table.Select(widget.TableCellID{Row: int(currentFrame), Col: 0})
 				label := fmt.Sprintf("Time: %.2f seconds  Frame: %d", u.playerTimeValue, u.currentFrame)
-				u.playerTime.SetText(label)
-				u.playerProgression.SetValue(u.playerTimeValue / totalTime)
+				fyne.DoAndWait(
+					func() {
+						u.playerTime.SetText(label)
+						u.playerProgression.SetValue(u.playerTimeValue / totalTime)
+					},
+				)
+
 			}
 		}
 	}()
 	go func() {
-		u.speakerDone = make(chan bool)
+
 		v := wav.NewYMMusic()
 		err := v.LoadMemory(y)
 		if err != nil {
@@ -361,12 +366,14 @@ func (u *ui) play() {
 		fmt.Printf("Speaker play the new file %v\n", format)
 
 		for {
-			<-u.speakerDone
-			streamer.Close()
-			speaker.Clear()
-			u.playerTimeChan <- true
-			fmt.Printf("Now the speaker is cleared\n")
-			return
+			select {
+			case <-u.speakerDone:
+				streamer.Close()
+				speaker.Clear()
+				u.playerTimeChan <- true
+				fmt.Printf("Now the speaker is cleared\n")
+				return
+			}
 		}
 
 	}()
@@ -376,7 +383,6 @@ func (u *ui) play() {
 func (u *ui) stop() {
 	if u.playerIsPlaying {
 		u.speakerDone <- true
-		u.playerTimeChan <- true
 	}
 
 }
