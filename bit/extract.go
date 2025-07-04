@@ -21,6 +21,10 @@ func Get(value byte, pos bit) byte {
 	return 0
 }
 
-func Set(b byte, n bit) byte {
-	return b | byte(n)
+func Set(b byte, n byte) byte {
+	if b != 0 {
+		v := (1 << n)
+		return byte(v)
+	}
+	return 0
 }

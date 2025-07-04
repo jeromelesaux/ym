@@ -43,35 +43,24 @@ func CopyCPCYm(y *ym.Ym) *ym.Ym {
 		r6 := n.Data[6][i]
 		r10 := n.Data[10][i]
 
-		r1r8 := bit.Set(bit.Get((r8), bit.B0), bit.B4) +
-			bit.Set(bit.Get((r8), bit.B1), bit.B5) +
-			bit.Set(bit.Get((r8), bit.B2), bit.B6) +
-			bit.Set(bit.Get(r8, bit.B3), bit.B7) +
-			bit.Set(bit.Get((r1), bit.B0), bit.B0) +
-			bit.Set(bit.Get((r1), bit.B1), bit.B1) +
-			bit.Set(bit.Get((r1), bit.B2), bit.B2) +
-			bit.Set(bit.Get(r1, bit.B3), bit.B3)
+		r1r8 := (r8 << 4) + r1
 
-		r3r9 := bit.Set(bit.Get((r9), bit.B0), bit.B4) +
-			bit.Set(bit.Get((r9), bit.B1), bit.B5) +
-			bit.Set(bit.Get((r9), bit.B2), bit.B6) +
-			bit.Set(bit.Get(r9, bit.B3), bit.B7) +
-			bit.Set(bit.Get((r3), bit.B0), bit.B0) +
-			bit.Set(bit.Get((r3), bit.B1), bit.B1) +
-			bit.Set(bit.Get((r3), bit.B2), bit.B2) +
-			bit.Set(bit.Get(r3, bit.B3), bit.B3)
+		r3r9 := bit.Set(bit.Get((r9), bit.B0), 4) +
+			bit.Set(bit.Get((r9), bit.B1), 5) +
+			bit.Set(bit.Get((r9), bit.B2), 6) +
+			bit.Set(bit.Get(r9, bit.B3), 7) +
+			bit.Set(bit.Get((r3), bit.B0), 0) +
+			bit.Set(bit.Get((r3), bit.B1), 1) +
+			bit.Set(bit.Get((r3), bit.B2), 2) +
+			bit.Set(bit.Get(r3, bit.B3), 3)
 
-		r5r10 := bit.Set(bit.Get((r10), bit.B0), bit.B4) +
-			bit.Set(bit.Get((r10), bit.B1), bit.B5) +
-			bit.Set(bit.Get((r10), bit.B2), bit.B6) +
-			bit.Set(bit.Get(r10, bit.B3), bit.B7) + r5
-		r6r8r9r10 := bit.Set(bit.Get((r10), bit.B4), bit.B7) +
-			bit.Set(bit.Get((r9), bit.B4), bit.B6) +
-			bit.Set(bit.Get((r8), bit.B4), bit.B5) +
-			bit.Set(bit.Get((r6), bit.B0), bit.B0) +
-			bit.Set(bit.Get((r6), bit.B1), bit.B1) +
-			bit.Set(bit.Get((r6), bit.B2), bit.B2) +
-			bit.Set(bit.Get(r6, bit.B3), bit.B3)
+		r5r10 := bit.Set(bit.Get((r10), bit.B0), 4) +
+			bit.Set(bit.Get((r10), bit.B1), 5) +
+			bit.Set(bit.Get((r10), bit.B2), 6) +
+			bit.Set(bit.Get(r10, bit.B3), 7) + r5
+		r6r8r9r10 := bit.Set(bit.Get((r10), bit.B4), 7) +
+			bit.Set(bit.Get((r9), bit.B4), 6) +
+			bit.Set(bit.Get((r8), bit.B4), 5) + r6
 
 		// set new merged values
 		n.Data[1][i] = r1r8
