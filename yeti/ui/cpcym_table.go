@@ -17,7 +17,7 @@ import (
  */
 
 var (
-	nbRegisterMax = 16 + 1 - 3
+	nbRegisterMax = 16 + 1
 )
 
 func (u *ui) updateCpcTableLength() (int, int) {
@@ -78,10 +78,10 @@ func (u *ui) updateCpcTableLabel() fyne.CanvasObject {
 
 func (u *ui) updateCpcTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 	label := cell.(*widget.Label)
-	if id.Col >= nbRegisterMax {
+	if id.Col >= 17 {
 		return
 	}
-	if id.Row >= int(u.ym.NbFrames)+1 {
+	if id.Row >= int(u.ymCpc.NbFrames)+1 {
 		return
 	}
 	switch id.Col {
@@ -93,29 +93,9 @@ func (u *ui) updateCpcTableValue(id widget.TableCellID, cell fyne.CanvasObject) 
 		}
 	default:
 		if id.Row == 0 {
-			if id.Col-1 >= cpc.Register16bitsMaxIndice {
-				label.SetText(fmt.Sprintf("register %d", id.Col-1+cpc.Register16bitsMaxIndice))
-			} else {
-				register := id.Col - 1
-				register *= 2
-				label.SetText(fmt.Sprintf("register %d/%d", register, register+1))
-			}
+			label.SetText(fmt.Sprintf("register %d", id.Col))
 		} else {
-			if id.Col-1 >= cpc.Register16bitsMaxIndice {
-				v, err := u.ymCpc.GetRegister8bits(id.Col-1, id.Row-1)
-				if err == nil {
-					label.SetText(fmt.Sprintf("%.2X", v))
-				} else {
-					label.SetText("value error")
-				}
-			} else {
-				v, err := u.ymCpc.GetRegister16bits(id.Col-1, id.Row-1)
-				if err == nil {
-					label.SetText(fmt.Sprintf("%.4X", v))
-				} else {
-					label.SetText("value error")
-				}
-			}
+			label.SetText(fmt.Sprintf("%.2X", u.ymCpc.Data[id.Col-1][id.Row-1]))
 		}
 	}
 	label.Resize(fyne.Size{Height: 20, Width: 20})

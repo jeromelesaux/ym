@@ -39,6 +39,7 @@ var (
 type ui struct {
 	filename                string
 	ym                      *ym.Ym
+	ymOrg                   *ym.Ym
 	fileDescription         *widget.Label
 	rowStartSelected        *widget.Entry
 	rowEndSelected          *widget.Entry
@@ -216,7 +217,9 @@ func (u *ui) check15Changer(v bool) {
 
 func (u *ui) applyCpcYmFormat(v bool) {
 	if v {
-		u.ymCpc.Ym = ym.CopyYm(u.ym)
+		u.ymOrg = ym.CopyYm(u.ym)
+		u.ymCpc.Ym = CopyCPCYm(u.ymOrg)
+		u.ymToSave = u.ymCpc.Ym
 		// change the table functions to use cpc functions
 		u.table.Length = u.updateCpcTableLength
 		u.table.CreateCell = u.updateCpcTableLabel
@@ -225,12 +228,14 @@ func (u *ui) applyCpcYmFormat(v bool) {
 		u.table.Refresh()
 	} else {
 		// change the table functions to use ym functions
+		u.ymOrg = ym.CopyYm(u.ym)
+		u.ymToSave = u.ym
 		u.table.Length = u.updateTableLength
 		u.table.CreateCell = u.updateTableLabel
 		u.table.UpdateCell = u.updateTableValue
 		u.table.OnSelected = u.selectedTableCell
 		u.table.Refresh()
-		u.ym = ym.CopyYm(u.ymCpc.Ym)
+
 	}
 }
 

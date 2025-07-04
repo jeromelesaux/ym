@@ -77,7 +77,7 @@ func (u *ui) updateTableValue(id widget.TableCellID, cell fyne.CanvasObject) {
 		}
 	default:
 		if id.Row == 0 {
-			label.SetText(fmt.Sprintf("register %d", id.Col-1))
+			label.SetText(fmt.Sprintf("register %d", id.Col))
 		} else {
 			label.SetText(fmt.Sprintf("%.2X", u.ym.Data[id.Col-1][id.Row-1]))
 		}
