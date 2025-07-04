@@ -35,13 +35,13 @@ func CopyCPCYm(y *ym.Ym) *ym.Ym {
 	}
 
 	for i := range len(n.Data[0]) {
-		r1 := n.Data[0][i]
-		r3 := n.Data[2][i]
-		r8 := n.Data[7][i]
-		r9 := n.Data[8][i]
-		r5 := n.Data[4][i]
-		r6 := n.Data[5][i]
-		r10 := n.Data[9][i]
+		r1 := n.Data[1][i]
+		r3 := n.Data[3][i]
+		r8 := n.Data[8][i]
+		r9 := n.Data[9][i]
+		r5 := n.Data[5][i]
+		r6 := n.Data[6][i]
+		r10 := n.Data[10][i]
 
 		r1r8 := bit.Set(bit.Get((r8), bit.B0), bit.B4) +
 			bit.Set(bit.Get((r8), bit.B1), bit.B5) +
@@ -74,15 +74,15 @@ func CopyCPCYm(y *ym.Ym) *ym.Ym {
 			bit.Set(bit.Get(r6, bit.B3), bit.B3)
 
 		// set new merged values
-		n.Data[0][i] = r1r8
-		n.Data[2][i] = r3r9
-		n.Data[4][i] = r5r10
-		n.Data[5][i] = r6r8r9r10
+		n.Data[1][i] = r1r8
+		n.Data[3][i] = r3r9
+		n.Data[5][i] = r5r10
+		n.Data[6][i] = r6r8r9r10
 
 		// set to 0 useless values
-		n.Data[7][i] = 0
 		n.Data[8][i] = 0
 		n.Data[9][i] = 0
+		n.Data[10][i] = 0
 	}
 
 	n.NbMixBlock = y.NbMixBlock

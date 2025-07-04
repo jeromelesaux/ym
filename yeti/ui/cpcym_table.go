@@ -8,7 +8,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/jeromelesaux/ym/cpc"
 )
 
 /*
@@ -40,25 +39,24 @@ func (u *ui) selectedCpcTableCell(id widget.TableCellID) {
 				return
 			}
 
-			if register >= cpc.Register16bitsMaxIndice {
-				if frameValue > 0xFF {
-					fmt.Fprintf(os.Stderr, "Value [%X] exceed 0xff ", frameValue)
-					return
-				}
-				fmt.Printf("new value [%d][%.2X] register [%d] , frame [%d]\n", frameValue, frameValue, register, frame)
-				err := u.ymCpc.SetRegister8bits(register, frame, byte(frameValue))
-				if err != nil {
-					fmt.Printf("error with new value [%d][%.4X] register [%d] , frame [%d], error :%v\n", frameValue, frameValue, register, frame, err)
-
-				}
-			} else {
-				fmt.Printf("new value [%d][%.4X] register [%d] , frame [%d]\n", frameValue, frameValue, register, frame)
-				err := u.ymCpc.SetRegister16bits(register, frame, uint16(frameValue))
-				if err != nil {
-					fmt.Printf("error with new value [%d][%.4X] register [%d] , frame [%d], error :%v\n", frameValue, frameValue, register, frame, err)
-
-				}
+			// if register >= cpc.Register16bitsMaxIndice {
+			if frameValue > 0xFF {
+				fmt.Fprintf(os.Stderr, "Value [%X] exceed 0xff ", frameValue)
+				return
 			}
+			fmt.Printf("new value [%d][%.2X] register [%d] , frame [%d]\n", frameValue, frameValue, register, frame)
+			if err := u.ymCpc.SetRegister8bits(register, frame, byte(frameValue)); err != nil {
+				fmt.Printf("error with new value [%d][%.4X] register [%d] , frame [%d], error :%v\n", frameValue, frameValue, register, frame, err)
+
+			}
+			// } else {
+			// 	fmt.Printf("new value [%d][%.4X] register [%d] , frame [%d]\n", frameValue, frameValue, register, frame)
+			// 	err := u.ymCpc.SetRegister16bits(register, frame, uint16(frameValue))
+			// 	if err != nil {
+			// 		fmt.Printf("error with new value [%d][%.4X] register [%d] , frame [%d], error :%v\n", frameValue, frameValue, register, frame, err)
+
+			// 	}
+			// }
 			u.table.Refresh()
 		}, u.window)
 		de.Show()
@@ -93,7 +91,7 @@ func (u *ui) updateCpcTableValue(id widget.TableCellID, cell fyne.CanvasObject) 
 		}
 	default:
 		if id.Row == 0 {
-			label.SetText(fmt.Sprintf("register %d", id.Col))
+			label.SetText(fmt.Sprintf("register %d", id.Col-1))
 		} else {
 			label.SetText(fmt.Sprintf("%.2X", u.ymCpc.Data[id.Col-1][id.Row-1]))
 		}
