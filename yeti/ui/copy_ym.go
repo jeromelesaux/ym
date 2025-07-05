@@ -5,7 +5,7 @@ import (
 	"github.com/jeromelesaux/ym/bit"
 )
 
-func CopyCPCYm(y *ym.Ym) *ym.Ym {
+func copyCPCYm(y *ym.Ym) *ym.Ym {
 	n := ym.NewYm()
 	n.FileID = y.FileID
 	n.NbFrames = y.NbFrames

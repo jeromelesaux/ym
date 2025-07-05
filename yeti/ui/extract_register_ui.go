@@ -219,8 +219,7 @@ func (u *ui) check15Changer(v bool) {
 func (u *ui) applyCpcYmFormat(v bool) {
 	if v {
 		u.ymOrg = ym.CopyYm(u.ym)
-		u.ymCpc.Ym = CopyCPCYm(u.ymOrg)
-		u.ymToSave = u.ymCpc.Ym
+		u.ymCpc.Ym = copyCPCYm(u.ymOrg)
 		// change the table functions to use cpc functions
 		u.table.Length = u.updateCpcTableLength
 		u.table.CreateCell = u.updateCpcTableLabel
@@ -230,7 +229,6 @@ func (u *ui) applyCpcYmFormat(v bool) {
 	} else {
 		// change the table functions to use ym functions
 		u.ymOrg = ym.CopyYm(u.ym)
-		u.ymToSave = u.ym
 		u.table.Length = u.updateTableLength
 		u.table.CreateCell = u.updateTableLabel
 		u.table.UpdateCell = u.updateTableValue
@@ -688,6 +686,11 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 }
 
 func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
+	if u.checkCpcYm.Checked {
+		u.ymToSave = u.ymCpc.Ym
+	} else {
+		u.ymToSave = u.ym
+	}
 	writer.Close()
 	os.Remove(filePath)
 	// force to last version YM
@@ -716,6 +719,4 @@ func (u *ui) newYM(data [16][]byte) {
 	u.ym.Data = data
 	u.ym.NbFrames = uint32(len(u.ym.Data[0]))
 	u.compressMethod = 5
-	u.ymToSave = u.ym
-
 }
