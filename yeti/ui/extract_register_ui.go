@@ -392,28 +392,28 @@ func (u *ui) stop() {
 }
 
 func (u *ui) prepareExport() {
-	u.ymToSave = ym.CopyYm(u.getCurrentYM())
-	u.ymToSave.LoopFrame = 0
-	length := u.frameEndSelectedIndex - u.frameStartSelectedIndex + 1
-	if length < 0 {
-		return
-	}
+	u.ymToSave = u.getCurrentYM()
+	// u.ymToSave.LoopFrame = 0
+	// length := u.frameEndSelectedIndex - u.frameStartSelectedIndex + 1
+	// if length < 0 {
+	// 	return
+	// }
 
-	for i := 0; i < 16; i++ {
-		u.ymToSave.Data[i] = make([]byte, length)
-		if u.registersSelected[i] {
-			var j, j2 int
-			if u.frameStartSelectedIndex != 0 {
-				j = u.frameStartSelectedIndex
-			}
-			for ; j < u.frameEndSelectedIndex; j++ {
-				u.ymToSave.Data[i][j2] = u.ym.Data[i][j]
-				j2++
-			}
-		}
-	}
+	// for i := 0; i < 16; i++ {
+	// 	u.ymToSave.Data[i] = make([]byte, length)
+	// 	if u.registersSelected[i] {
+	// 		var j, j2 int
+	// 		if u.frameStartSelectedIndex != 0 {
+	// 			j = u.frameStartSelectedIndex
+	// 		}
+	// 		for ; j < u.frameEndSelectedIndex; j++ {
+	// 			u.ymToSave.Data[i][j2] = u.ym.Data[i][j]
+	// 			j2++
+	// 		}
+	// 	}
+	// }
 
-	u.ymToSave.NbFrames = uint32(length)
+	// u.ymToSave.NbFrames = uint32(length)
 }
 
 func (u *ui) DisplayChange() {
@@ -577,7 +577,7 @@ func (u *ui) SaveFileAction() {
 			return
 		}
 		filePath := strings.Replace(writer.URI().String(), writer.URI().Scheme()+"://", "", -1)
-		if err = u.saveNewYm(filePath, writer); err != nil {
+		if err := u.saveNewYm(filePath, writer); err != nil {
 			dialog.ShowError(err, u.window)
 			return
 		}
@@ -657,7 +657,9 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 			headers[0].HeaderLevel)
 		u.headerLevel = 0
 		u.compressMethod = 5
+
 		u.archiveFilename = string(headers[0].Name)
+		var err error
 		content, err = archive.DecompresBytes(headers[0])
 		if err != nil && len(content) < headers[0].OriginalSize {
 			fmt.Fprintf(os.Stderr, "Error while decompressing file %s, error :%v\n", u.filename, err.Error())
@@ -665,6 +667,7 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 			return
 		}
 	} else {
+		var err error
 		content, err = os.ReadFile(u.filename)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error while decoding ym file %s, error :%v\n", u.filename, err.Error())
@@ -686,28 +689,30 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 }
 
 func (u *ui) saveNewYm(filePath string, writer fyne.URIWriteCloser) error {
-	if u.checkCpcYm.Checked {
-		u.ymToSave = u.ymCpc.Ym
-	} else {
-		u.ymToSave = u.ym
-	}
 	writer.Close()
 	os.Remove(filePath)
+	u.prepareExport()
 	// force to last version YM
-	if u.ymToSave.FileID != ym.YM1 && u.ymToSave.FileID != ym.YM2 {
-		if u.ymToSave.FileID != ym.YM6 {
-			u.ymToSave.FileID = ym.YM6
-		}
-	}
-
-	// check if the ymTosave is not empty
-	if len(u.ymToSave.Data[0]) == 0 {
-		u.frameEndSelectedIndex = int(u.ym.NbFrames)
-		u.prepareExport()
-	}
+	// if u.ymToSave.FileID != ym.YM1 && u.ymToSave.FileID != ym.YM2 {
+	// 	if u.ymToSave.FileID != ym.YM6 {
+	// 		u.ymToSave.FileID = ym.YM3
+	// 	}
+	// }
 	content, err := encoding.Marshall(u.ymToSave)
 	if err != nil {
 		return err
+	}
+	if u.compressMethod == 0 {
+		f, err := os.Create(filePath)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		_, err = f.Write(content)
+		if err != nil {
+			return err
+		}
+		return nil
 	}
 	archive := lha.NewLha(filePath)
 	lha.GenericFormat = true

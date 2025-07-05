@@ -108,7 +108,7 @@ func (u *ui) LoadUI(app fyne.App) {
 		u.check15Changer}
 
 	registerCheckLayout := container.New(
-		layout.NewGridLayoutWithRows(17),
+		layout.NewGridLayoutWithColumns(17),
 	)
 	registersSelectionCheckedButton[0] = widget.NewCheck("select all registers", registersSelectFuncs[0])
 	u.checkAllButton = registersSelectionCheckedButton[0]
@@ -133,7 +133,6 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.rowSelectionLayout = container.NewVScroll(
 		container.New(
 			layout.NewGridLayoutWithColumns(6),
-			container.NewVScroll(registerCheckLayout),
 			u.checkCpcYm,
 			startFrame,
 			u.rowStartSelected,
@@ -157,8 +156,9 @@ func (u *ui) LoadUI(app fyne.App) {
 			cleanButton,
 		),
 		container.New(
-			layout.NewGridLayoutWithColumns(1),
+			layout.NewGridLayoutWithRows(2),
 			u.rowSelectionLayout,
+			container.NewHScroll(registerCheckLayout),
 		),
 	)
 	//selectionLayout.Resize(fyne.NewSize(400, 20))

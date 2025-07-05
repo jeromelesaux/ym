@@ -112,7 +112,7 @@ func (u *ui) copyAfterFrame(v int) {
 
 func (u *ui) suppressFrame(start, end int) {
 	for i := range 16 {
-		u.ym.Data[i] = slices.Delete(u.ym.Data[i], start, end)
+		u.ym.Data[i] = slices.Delete(u.ym.Data[i], start, end+1)
 	}
 	u.ym.NbFrames = uint32(len(u.ym.Data[0]))
 	u.table.Refresh()
