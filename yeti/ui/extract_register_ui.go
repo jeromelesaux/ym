@@ -143,6 +143,7 @@ func (u *ui) generateChart() {
 	fw.Close()*/
 	u.graphic.SetImage(img)
 	u.table.Select(widget.TableCellID{Row: 0, Col: 0})
+	u.table.Refresh()
 }
 
 func (u *ui) checkAllChanger(v bool) {
@@ -466,6 +467,7 @@ func (u *ui) ResetUI() {
 	u.ymCpc = cpc.NewCpcYM()
 	u.setFileDescription()
 	u.generateChart()
+	u.checkCpcYm.SetChecked(false)
 	u.graphicContent.Refresh()
 }
 
@@ -601,6 +603,7 @@ func (u *ui) OpenFileAction() {
 		u.lastDirectory = reader.URI().Scheme() + "://" + filepath.Dir(reader.URI().Path())
 		alert := dialog.NewInformation("loading file", "Please Wait", u.window)
 		alert.Show()
+		u.ResetUI()
 		u.loadYmFile(reader)
 		//	u.graphicContent.Refresh()
 		alert.Hide()
@@ -677,7 +680,7 @@ func (u *ui) loadYmFile(f fyne.URIReadCloser) {
 		dialog.ShowError(err, u.window)
 		return
 	}
-	fmt.Printf("NB frames:[%d]\n", u.ym.NbFrames)
+	fmt.Printf("Format:[%s]\nNB frames:[%d]\n", u.ym.FormatType(), u.ym.NbFrames)
 
 	u.generateChart()
 	u.setFileDescription()
