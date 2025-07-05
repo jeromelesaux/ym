@@ -273,6 +273,7 @@ func (u *ui) goToFrame(v string) {
 		frame = int(u.ym.NbFrames)
 	}
 	u.currentFrame = frame
+	u.table.Select(widget.TableCellID{Row: u.currentFrame})
 }
 func NewUI() *ui {
 	u := &ui{}

@@ -114,7 +114,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	u.checkAllButton = registersSelectionCheckedButton[0]
 	registerCheckLayout.Add(registersSelectionCheckedButton[0])
 	for i := 1; i < 17; i++ {
-		registersSelectionCheckedButton[i] = widget.NewCheck(fmt.Sprintf("register %d", i-1),
+		registersSelectionCheckedButton[i] = widget.NewCheck(fmt.Sprintf("r%d", i-1),
 			registersSelectFuncs[i])
 		registersSelectionCheckedButton[i].SetChecked(true)
 		registerCheckLayout.Add(registersSelectionCheckedButton[i])
@@ -142,7 +142,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	//u.rowSelectionLayout.Resize(fyne.NewSize(200, 20))
 	u.playerProgression = widget.NewProgressBar()
 	selectionLayout := container.New(
-		layout.NewGridLayoutWithRows(3),
+		layout.NewVBoxLayout(),
 		u.playerProgression,
 		container.New(
 			layout.NewGridLayoutWithColumns(8),

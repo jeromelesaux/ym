@@ -91,7 +91,7 @@ func (u *ui) updateCpcTableValue(id widget.TableCellID, cell fyne.CanvasObject) 
 		}
 	default:
 		if id.Row == 0 {
-			label.SetText(fmt.Sprintf("register %d", id.Col-1))
+			label.SetText(fmt.Sprintf("r%d", id.Col-1))
 		} else {
 			label.SetText(fmt.Sprintf("%.2X", u.ymCpc.Data[id.Col-1][id.Row-1]))
 		}
