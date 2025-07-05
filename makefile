@@ -11,11 +11,12 @@ VERSIONCOMMENT:=$(shell egrep -m1 "Appversion" yeti/ui/extract_register_ui.go | 
 suffix=$(shell grep -m1 "version" *.go | sed 's/[", ]//g' | cut -d= -f2 | sed 's/[0-9.]//g')
 snapshot=$(shell date +%FT%T)
 VERSION="1.0-"$(VERSIONCOMMENT)
+DATE:=$(shell date +"%Y-%m-%d")
 
 ifeq ($(suffix),rc)
 	appversion=$(VERSION)$(snapshot)
 else 
-	appversion=$(VERSION)
+	appversion=$(DATE)
 endif 
 
 .DEFAULT_GOAL:=build
