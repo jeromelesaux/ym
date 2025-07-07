@@ -130,9 +130,20 @@ func (u *ui) LoadUI(app fyne.App) {
 	endFrame := widget.NewLabel("Select the last frame")
 	u.rowStartSelected.OnSubmitted = u.startChange
 
+	dividedBy2Check := widget.NewCheck("/2 Registers", func(b bool) {
+		if b {
+			u.ym = divideBy2Registers(u.ym)
+
+		} else {
+			u.ym = multiplyBy2Registers(u.ym)
+		}
+		u.table.Refresh()
+	})
+
 	u.rowSelectionLayout = container.NewVScroll(
 		container.New(
 			layout.NewGridLayoutWithColumns(6),
+			dividedBy2Check,
 			u.checkCpcYm,
 			startFrame,
 			u.rowStartSelected,

@@ -96,3 +96,27 @@ func copyCPCYm(y *ym.Ym) *ym.Ym {
 
 	return n
 }
+
+func divideBy2Registers(y *ym.Ym) *ym.Ym {
+	for i := range y.NbFrames {
+		y.Data[0][i] /= 2
+		y.Data[1][i] /= 2
+		y.Data[2][i] /= 2
+		y.Data[3][i] /= 2
+		y.Data[4][i] /= 2
+		y.Data[5][i] /= 2
+	}
+	return y
+}
+
+func multiplyBy2Registers(y *ym.Ym) *ym.Ym {
+	for i := range y.NbFrames {
+		y.Data[0][i] *= 2
+		y.Data[1][i] *= 2
+		y.Data[2][i] *= 2
+		y.Data[3][i] *= 2
+		y.Data[4][i] *= 2
+		y.Data[5][i] *= 2
+	}
+	return y
+}
