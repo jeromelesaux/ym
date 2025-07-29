@@ -111,10 +111,17 @@ func (u *ui) copyAfterFrame(v int) {
 }
 
 func (u *ui) suppressFrame(start, end int) {
+	if start <= 0 {
+		start = 0
+	}
+	if end > int(u.ym.NbFrames) {
+		end = int(u.ym.NbFrames)
+	}
 	for i := range 16 {
-		u.ym.Data[i] = slices.Delete(u.ym.Data[i], start, end+1)
+		u.ym.Data[i] = slices.Delete(u.ym.Data[i], start, end)
 	}
 	u.ym.NbFrames = uint32(len(u.ym.Data[0]))
-	u.table.Refresh()
+	u.setFileDescription()
+	u.generateChart()
 	canvas.Refresh(u.table)
 }
