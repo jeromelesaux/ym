@@ -5,6 +5,8 @@ import (
 	"testing"
 
 	"github.com/jeromelesaux/ym/bit"
+	"github.com/jeromelesaux/ym/yeti/ui"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestConversion(t *testing.T) {
@@ -23,4 +25,10 @@ func TestConversion(t *testing.T) {
 
 	fmt.Printf("Ox%X %d %b", res, res, res)
 
+}
+
+func TestIspair(t *testing.T) {
+	assert.True(t, ui.IsPair(2))
+	assert.False(t, ui.IsPair(3))
+	assert.False(t, ui.IsPair(11))
 }
