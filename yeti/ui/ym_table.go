@@ -46,6 +46,8 @@ func (u *ui) selectedTableCell(id widget.TableCellID) {
 			//	u.window.Resize(fyne.NewSize(700, 600))
 		}, u.window)
 		de.Show()
+	} else {
+		u.selectedFrame = frame
 	}
 
 }

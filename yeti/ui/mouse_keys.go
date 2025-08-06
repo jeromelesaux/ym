@@ -23,6 +23,8 @@ func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
 		u.DisplayChange()
 	case "C":
 		u.CancelChange()
+	case "Space":
+		u.playFrame()
 	default:
 		fmt.Printf("name:%s\n", ev.Name)
 
