@@ -110,7 +110,7 @@ func (u *ui) LoadUI(app fyne.App) {
 	registerCheckLayout := container.New(
 		layout.NewGridLayoutWithColumns(17),
 	)
-	registersSelectionCheckedButton[0] = widget.NewCheck("select all registers", registersSelectFuncs[0])
+	registersSelectionCheckedButton[0] = widget.NewCheck("all", registersSelectFuncs[0])
 	u.checkAllButton = registersSelectionCheckedButton[0]
 	registerCheckLayout.Add(registersSelectionCheckedButton[0])
 	for i := 1; i < 17; i++ {
@@ -173,10 +173,11 @@ func (u *ui) LoadUI(app fyne.App) {
 		),
 	)
 	//selectionLayout.Resize(fyne.NewSize(400, 20))
-	u.table = widget.NewTable(
+	u.table = w2.NewTable(
 		u.updateTableLength,
 		u.updateTableLabel,
 		u.updateTableValue,
+		u.onTypedKey,
 	)
 	u.table.OnSelected = u.selectedTableCell
 	u.tableContainer = container.NewVScroll(u.table)
@@ -244,6 +245,7 @@ func (u *ui) LoadUI(app fyne.App) {
 				u.tableContainer,
 			),
 		))
+
 	u.window.Canvas().SetOnTypedRune(u.onTypedRune)
 	u.window.Canvas().SetOnTypedKey(u.onTypedKey)
 	u.window.Resize(fyne.NewSize(400, 900))

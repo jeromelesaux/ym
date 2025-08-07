@@ -9,22 +9,26 @@ import (
 
 func (u *ui) onTypedKey(ev *fyne.KeyEvent) {
 	switch ev.Name {
-	case "S":
+	case fyne.KeyS:
 		u.stop()
-	case "P":
+	case fyne.KeyP:
 		u.play()
-	case "O":
+	case fyne.KeyO:
 		u.OpenFileAction()
-	case "E":
+	case fyne.KeyE:
 		u.SaveFileAction()
-	case "R":
+	case fyne.KeyR:
 		u.ResetUI()
-	case "D":
+	case fyne.KeyD:
 		u.DisplayChange()
-	case "C":
+	case fyne.KeyC:
 		u.CancelChange()
-	case "Space":
+	case fyne.KeySpace:
 		u.playFrame()
+	case fyne.KeyDown,
+		fyne.KeyLeft, fyne.KeyRight,
+		fyne.KeyUp:
+		u.table.TypedKey(ev)
 	default:
 		fmt.Printf("name:%s\n", ev.Name)
 

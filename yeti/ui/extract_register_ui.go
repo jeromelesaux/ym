@@ -49,7 +49,7 @@ type ui struct {
 	frameEndSelectedIndex   int
 	rowSelectionLayout      *container.Scroll
 
-	table             *widget.Table
+	table             *w2.TableKeyEvent
 	graphicContent    *fyne.Container
 	tableContainer    *container.Scroll
 	graphic           *w2.ClickableImage

@@ -49,7 +49,6 @@ func (u *ui) selectedTableCell(id widget.TableCellID) {
 	} else {
 		u.selectedFrame = frame
 	}
-
 }
 
 // nolint: ireturn
